@@ -1,21 +1,29 @@
 {
-  "timestamp": "2026-05-19T21:06:33.608Z",
+  "timestamp": "2026-05-19T21:13:53.488Z",
   "tests": [
+    {
+      "test": "connectivity",
+      "provider": "openrouter",
+      "model": "nousresearch/hermes-3-llama-3.1-405b:free",
+      "status": "warn",
+      "latencyMs": 299,
+      "error": "openrouter HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"nousresearch/hermes-3-llama-3.1-405b:free is temporarily rate-limited upstream. Please retry shortly, o"
+    },
     {
       "test": "connectivity",
       "provider": "ollama",
       "model": "qwen2.5-coder:14b",
       "status": "ok",
-      "latencyMs": 3593,
-      "responseLength": 42,
-      "preview": "{\"status\":\"ok\",\"provider\":\"CodeQAnalyzer\"}"
+      "latencyMs": 12075,
+      "responseLength": 37,
+      "preview": "{\"status\":\"ok\",\"provider\":\"CodeQwen\"}"
     },
     {
       "test": "connectivity",
       "provider": "hermes",
       "model": "hermes-configured",
       "status": "warn",
-      "latencyMs": 20016,
+      "latencyMs": 20008,
       "error": "hermes one-shot failed: spawnSync C:\\Windows\\system32\\cmd.exe ETIMEDOUT"
     },
     {
@@ -23,23 +31,24 @@
       "provider": "hermes",
       "model": "hermes-configured",
       "status": "ok",
-      "latencyMs": 81986,
+      "latencyMs": 86727,
       "hypothesesCount": 3
     },
     {
       "test": "json_extraction",
       "provider": "ollama",
       "status": "ok",
-      "latencyMs": 6388,
+      "latencyMs": 6879,
       "jsonValid": true
     }
   ],
   "summary": {
-    "totalMs": 112134,
+    "totalMs": 125991,
     "passCount": 3,
     "failCount": 0,
-    "warnCount": 1,
+    "warnCount": 2,
     "providerChain": [
+      "openrouter",
       "ollama",
       "hermes"
     ],
