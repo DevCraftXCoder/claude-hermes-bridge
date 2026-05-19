@@ -9,7 +9,10 @@
   },
   "scripts": {
     "sync": "node sync/bulk-sync-hermes.cjs",
-    "install-hook": "bash sync/install.sh"
+    "install-hook": "bash sync/install.sh",
+    "benchmark": "node autoresearch/benchmark.cjs --verbose",
+    "benchmark:json": "node autoresearch/benchmark.cjs --verbose --json",
+    "hermes-config": "wsl -d Ubuntu -- bash /mnt/c/Za/claude-hermes-bridge/autoresearch/hermes-config.sh"
   },
   "keywords": [
     "claude-code",

@@ -156,17 +156,64 @@ Once installed, you can ask Claude things like:
 
 ---
 
+## Autoresearch ↔ Hermes LLM Integration
+
+The `autoresearch/` directory adds LLM-powered hypothesis generation to the autoresearch measurement loop. Measures stay deterministic — LLMs only enter at the **plan** phase.
+
+### Provider Chain
+
+| Priority | Provider | Model | Cost |
+|----------|----------|-------|------|
+| 1 | OpenRouter | owl-alpha (Hermes 3 405B) | Free |
+| 2 | Ollama | qwen2.5-coder:14b | Free (local) |
+| 3 | Hermes CLI | configured model | Varies |
+
+### Quick Start
+
+```bash
+# 1. Configure Hermes for autoresearch
+pnpm hermes-config
+
+# 2. Run the benchmark to verify all providers
+pnpm benchmark
+
+# 3. Save JSON report for tracking
+pnpm benchmark:json
+```
+
+### Creating a Domain Planner
+
+```bash
+cp autoresearch/measures/_planner-template.cjs \
+   scripts/autoresearch/measures/my-domain-planner.cjs
+```
+
+Edit `DOMAIN_NAME` and `buildPrompt()` — the harness auto-discovers `<metric>-planner.cjs` files.
+
+See [docs/autoresearch-hermes-playbook.md](docs/autoresearch-hermes-playbook.md) for the full architecture, setup guide, and troubleshooting.
+
+---
+
 ## Files
 
 ```
 claude-hermes-bridge/
 ├── README.md
-├── PRODUCTION_GUIDE.md          Full Hermes + Windows/WSL2 deployment guide
-├── package.json                 pnpm project file
-└── sync/
-    ├── sync-hermes.cjs          PostToolUse auto-sync hook
-    ├── bulk-sync-hermes.cjs     One-time bulk sync script
-    └── install.sh               Quick installer
+├── PRODUCTION_GUIDE.md              Full Hermes + Windows/WSL2 deployment guide
+├── package.json                     pnpm project file
+├── sync/
+│   ├── sync-hermes.cjs              PostToolUse auto-sync hook
+│   ├── bulk-sync-hermes.cjs         One-time bulk sync script
+│   └── install.sh                   Quick installer
+├── autoresearch/
+│   ├── lib/
+│   │   └── llm.cjs                  LLM client — 3-provider fallback chain
+│   ├── measures/
+│   │   └── _planner-template.cjs    Copy + customize for your domain
+│   ├── benchmark.cjs                QA benchmark (connectivity, completion, JSON)
+│   └── hermes-config.sh             One-time Hermes provider setup
+└── docs/
+    └── autoresearch-hermes-playbook.md  Full integration playbook
 ```
 
 ---

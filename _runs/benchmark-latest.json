@@ -1,0 +1,48 @@
+{
+  "timestamp": "2026-05-19T21:06:33.608Z",
+  "tests": [
+    {
+      "test": "connectivity",
+      "provider": "ollama",
+      "model": "qwen2.5-coder:14b",
+      "status": "ok",
+      "latencyMs": 3593,
+      "responseLength": 42,
+      "preview": "{\"status\":\"ok\",\"provider\":\"CodeQAnalyzer\"}"
+    },
+    {
+      "test": "connectivity",
+      "provider": "hermes",
+      "model": "hermes-configured",
+      "status": "warn",
+      "latencyMs": 20016,
+      "error": "hermes one-shot failed: spawnSync C:\\Windows\\system32\\cmd.exe ETIMEDOUT"
+    },
+    {
+      "test": "completion",
+      "provider": "hermes",
+      "model": "hermes-configured",
+      "status": "ok",
+      "latencyMs": 81986,
+      "hypothesesCount": 3
+    },
+    {
+      "test": "json_extraction",
+      "provider": "ollama",
+      "status": "ok",
+      "latencyMs": 6388,
+      "jsonValid": true
+    }
+  ],
+  "summary": {
+    "totalMs": 112134,
+    "passCount": 3,
+    "failCount": 0,
+    "warnCount": 1,
+    "providerChain": [
+      "ollama",
+      "hermes"
+    ],
+    "firstAvailable": "ollama"
+  }
+}
