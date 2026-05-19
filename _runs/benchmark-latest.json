@@ -1,12 +1,12 @@
 {
-  "timestamp": "2026-05-19T21:48:28.574Z",
+  "timestamp": "2026-05-19T21:51:33.562Z",
   "tests": [
     {
       "test": "connectivity",
       "provider": "openrouter",
       "model": "nousresearch/hermes-3-llama-3.1-405b",
       "status": "ok",
-      "latencyMs": 889,
+      "latencyMs": 2331,
       "responseLength": 50,
       "preview": "{\"status\":\"ok\",\"provider\":\"code_quality_analyzer\"}"
     },
@@ -15,7 +15,7 @@
       "provider": "ollama",
       "model": "qwen2.5-coder:14b",
       "status": "ok",
-      "latencyMs": 11811,
+      "latencyMs": 2282,
       "responseLength": 37,
       "preview": "{\"status\":\"ok\",\"provider\":\"CodeQwen\"}"
     },
@@ -23,31 +23,32 @@
       "test": "connectivity",
       "provider": "hermes",
       "model": "hermes-configured",
-      "status": "warn",
-      "latencyMs": 20019,
-      "error": "hermes one-shot failed: spawnSync C:\\Windows\\system32\\cmd.exe ETIMEDOUT"
+      "status": "ok",
+      "latencyMs": 8008,
+      "responseLength": 24,
+      "preview": "{status:ok,provider:owl}"
     },
     {
       "test": "completion",
       "provider": "openrouter",
       "model": "nousresearch/hermes-3-llama-3.1-405b",
       "status": "ok",
-      "latencyMs": 15201,
+      "latencyMs": 21256,
       "hypothesesCount": 3
     },
     {
       "test": "json_extraction",
       "provider": "openrouter",
       "status": "ok",
-      "latencyMs": 919,
+      "latencyMs": 969,
       "jsonValid": true
     }
   ],
   "summary": {
-    "totalMs": 48841,
-    "passCount": 4,
+    "totalMs": 34848,
+    "passCount": 5,
     "failCount": 0,
-    "warnCount": 1,
+    "warnCount": 0,
     "providerChain": [
       "openrouter",
       "ollama",
