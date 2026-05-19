@@ -29,11 +29,27 @@ const fs   = require('fs');
 const os   = require('os');
 const path = require('path');
 const { execSync } = require('child_process');
+const { createHash } = require('crypto');
+
+// [P1-B] Only alphanumeric, dots, dashes, underscores allowed in IDs used in shell commands.
+const SAFE_ID_RE = /^[A-Za-z0-9._-]+$/;
+function assertSafeId(value, label) {
+  if (!SAFE_ID_RE.test(value)) {
+    process.stderr.write(`[bulk-sync] ERROR: unsafe ${label}: ${JSON.stringify(value)} — only [A-Za-z0-9._-] allowed\n`);
+    process.exit(1);
+  }
+}
 
 const WSL_DISTRO = process.env.HERMES_WSL_DISTRO     || 'Ubuntu';
 const CAT_AGENTS = process.env.HERMES_CATEGORY_AGENTS || 'cc-agents';
 const CAT_HOOKS  = process.env.HERMES_CATEGORY_HOOKS  || 'cc-hooks';
 const CAT_SKILLS = process.env.HERMES_CATEGORY_SKILLS || 'cc-skills';
+
+// Validate env-var-derived IDs at startup so misconfiguration is caught immediately.
+assertSafeId(WSL_DISTRO, 'HERMES_WSL_DISTRO');
+assertSafeId(CAT_AGENTS, 'HERMES_CATEGORY_AGENTS');
+assertSafeId(CAT_HOOKS,  'HERMES_CATEGORY_HOOKS');
+assertSafeId(CAT_SKILLS, 'HERMES_CATEGORY_SKILLS');
 
 let _wslUser = process.env.HERMES_WSL_USER || null;
 
@@ -44,9 +60,12 @@ function getWslUser() {
       `wsl -d ${WSL_DISTRO} -- whoami`,
       { encoding: 'utf8', timeout: 5_000, stdio: 'pipe', windowsHide: true }
     ).trim();
-  } catch {
-    _wslUser = 'user';
-    process.stderr.write(`[bulk-sync] WARN: could not auto-detect WSL user. Set HERMES_WSL_USER env var.\n`);
+  } catch (err) {
+    // [P1-C] Do not cache a fallback username — syncs to a non-existent path would silently
+    // succeed. Exit immediately so the user sets HERMES_WSL_USER.
+    process.stderr.write(`[bulk-sync] ERROR: could not auto-detect WSL user: ${err.message}\n`);
+    process.stderr.write(`[bulk-sync] Set HERMES_WSL_USER env var and retry.\n`);
+    process.exit(1);
   }
   return _wslUser;
 }
@@ -89,11 +108,17 @@ function wslUnixPath(winPath) {
 }
 
 function syncToHermes(name, content, category) {
-  const wslUser   = getWslUser();
+  // [P1-B] Validate all values that appear in the shell command before use.
+  assertSafeId(name, 'skill name');
+  assertSafeId(category, 'category');
+  const wslUser = getWslUser();
+  assertSafeId(wslUser, 'WSL username');
+
   const skillDir  = `/home/${wslUser}/.hermes/skills/${category}/${name}`;
   const skillFile = `${skillDir}/SKILL.md`;
 
-  const tmpWin  = path.join(os.tmpdir(), `hermes-bulk-${Date.now()}-${Math.random().toString(36).slice(2)}.md`);
+  const tmpId   = createHash('sha256').update(`${Date.now()}-${name}-${Math.random()}`).digest('hex').slice(0, 16);
+  const tmpWin  = path.join(os.tmpdir(), `hermes-bulk-${tmpId}.md`);
   const tmpUnix = wslUnixPath(tmpWin);
   fs.writeFileSync(tmpWin, content, 'utf8');
 
@@ -126,6 +151,7 @@ function extractFirstComment(src) {
 
 // ── Initialize ───────────────────────────────────────────────────────────────
 
+// [P1-C] getWslUser() exits 1 on failure — no silent fallback to 'user'.
 const wslUser = getWslUser();
 process.stdout.write(`[bulk-sync] WSL distro: ${WSL_DISTRO}, user: ${wslUser}\n`);
 process.stdout.write(`[bulk-sync] Categories: ${CAT_AGENTS} | ${CAT_HOOKS} | ${CAT_SKILLS}\n\n`);

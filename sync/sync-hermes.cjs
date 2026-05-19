@@ -32,12 +32,27 @@ const fs   = require('fs');
 const os   = require('os');
 const path = require('path');
 const { execSync } = require('child_process');
+const { createHash } = require('crypto');
+
+// [P1-B] Only alphanumeric, dots, dashes, underscores allowed in IDs used in shell commands.
+const SAFE_ID_RE = /^[A-Za-z0-9._-]+$/;
+function assertSafeId(value, label) {
+  if (!SAFE_ID_RE.test(value)) {
+    throw new Error(`unsafe ${label}: ${JSON.stringify(value)} — only [A-Za-z0-9._-] allowed`);
+  }
+}
 
 const DEBOUNCE_MS = 5_000;
 const WSL_DISTRO  = process.env.HERMES_WSL_DISTRO        || 'Ubuntu';
 const CAT_AGENTS  = process.env.HERMES_CATEGORY_AGENTS    || 'cc-agents';
 const CAT_HOOKS   = process.env.HERMES_CATEGORY_HOOKS     || 'cc-hooks';
 const CAT_SKILLS  = process.env.HERMES_CATEGORY_SKILLS    || 'cc-skills';
+
+// Validate env-var-derived IDs at startup so misconfiguration is caught immediately.
+assertSafeId(WSL_DISTRO, 'HERMES_WSL_DISTRO');
+assertSafeId(CAT_AGENTS, 'HERMES_CATEGORY_AGENTS');
+assertSafeId(CAT_HOOKS,  'HERMES_CATEGORY_HOOKS');
+assertSafeId(CAT_SKILLS, 'HERMES_CATEGORY_SKILLS');
 
 let _wslUser = process.env.HERMES_WSL_USER || null;
 
@@ -48,9 +63,10 @@ function getWslUser() {
       `wsl -d ${WSL_DISTRO} -- whoami`,
       { encoding: 'utf8', timeout: 5_000, stdio: 'pipe', windowsHide: true }
     ).trim();
-  } catch {
-    _wslUser = 'user'; // fallback — set HERMES_WSL_USER to override
-    process.stderr.write(`[sync-hermes] WARN: could not detect WSL user, set HERMES_WSL_USER env var\n`);
+  } catch (err) {
+    // [P1-C] Do not cache a fallback username — syncs to a non-existent path would silently
+    // succeed. Throw so main() can surface the error and the user can set HERMES_WSL_USER.
+    throw new Error(`could not detect WSL user (set HERMES_WSL_USER env var): ${err.message}`);
   }
   return _wslUser;
 }
@@ -74,12 +90,19 @@ function wslUnixPath(winPath) {
 }
 
 function syncToHermes(name, content, category) {
-  const wslUser   = getWslUser();
+  // [P1-B] Validate all values that appear in the shell command before use.
+  assertSafeId(name, 'skill name');
+  assertSafeId(category, 'category');
+  const wslUser = getWslUser();
+  assertSafeId(wslUser, 'WSL username');
+
   const skillDir  = `/home/${wslUser}/.hermes/skills/${category}/${name}`;
   const skillFile = `${skillDir}/SKILL.md`;
 
-  // Write to Windows temp, then have WSL copy it (avoids all bash escaping issues)
-  const tmpWin  = path.join(os.tmpdir(), `hermes-sync-${Date.now()}.md`);
+  // Write to Windows temp, then have WSL copy it (avoids all bash escaping issues).
+  // [P2] Use createHash for a collision-free temp name.
+  const tmpId   = createHash('sha256').update(`${Date.now()}-${name}`).digest('hex').slice(0, 16);
+  const tmpWin  = path.join(os.tmpdir(), `hermes-sync-${tmpId}.md`);
   const tmpUnix = wslUnixPath(tmpWin);
   fs.writeFileSync(tmpWin, content, 'utf8');
 
@@ -119,25 +142,31 @@ async function main() {
 
   if (!isAgent && !isHook && !isSkill) process.exit(0);
 
-  // Per-file debounce stamp — each file has its own 5s window
+  // [P1-F] Per-file debounce stamp — use SHA-256 of full path (not truncated base64)
+  // to avoid key collisions between files sharing a path prefix.
   const fileStamp = path.join(
     os.tmpdir(),
-    `.hermes-sync-${Buffer.from(filePath).toString('base64').slice(0, 16)}`
+    `.hermes-sync-${createHash('sha256').update(filePath).digest('hex').slice(0, 32)}`
   );
   try {
     const last = parseInt(fs.readFileSync(fileStamp, 'utf8'), 10);
     if (Date.now() - last < DEBOUNCE_MS) process.exit(0);
   } catch { /* first sync for this file */ }
-  fs.writeFileSync(fileStamp, String(Date.now()));
+  // NOTE: stamp is written AFTER sync completes (see bottom of function) so a failed
+  // sync does not suppress the next retry. [P1-D]
 
   // Resolve to Windows path if needed
   const winPath = filePath
     .replace(/^\/mnt\/([a-z])\//, (_, d) => `${d.toUpperCase()}:/`)
     .replace(/^\/([a-z])\//, (_, d) => `${d.toUpperCase()}:/`);
 
+  // [P1-E] Surface read failures to stderr rather than silently exiting 0.
   let raw;
   try { raw = fs.readFileSync(winPath, 'utf8'); } catch {
-    try { raw = fs.readFileSync(filePath, 'utf8'); } catch { process.exit(0); }
+    try { raw = fs.readFileSync(filePath, 'utf8'); } catch {
+      process.stderr.write(`[sync-hermes] ERROR: could not read file: ${filePath}\n`);
+      process.exit(1);
+    }
   }
 
   if (isAgent) {
@@ -194,7 +223,15 @@ async function main() {
     process.stderr.write(`[sync-hermes] skill synced → ${CAT_SKILLS}/${name}\n`);
   }
 
+  // [P1-D] Write debounce stamp only after a successful sync, not before.
+  fs.writeFileSync(fileStamp, String(Date.now()));
+
   process.exit(0);
 }
 
-main().catch(() => process.exit(0));
+// [P1-A] Surface errors to stderr and exit non-zero so Claude Code hook output
+// shows the failure rather than silently treating every error as success.
+main().catch(err => {
+  process.stderr.write(`[sync-hermes] ERROR: ${err.message}\n`);
+  process.exit(1);
+});
