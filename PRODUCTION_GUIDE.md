@@ -150,10 +150,26 @@ hermes model
 
 ### 1. Nous Portal (Default — Set This First)
 
-**This is the recommended default provider.**
+**This is the strongly recommended default provider. Use it before anything else.**
+
+#### Why Nous Portal wins
+
+| | Nous Portal | Ollama (local CPU) |
+|--|-------------|-------------------|
+| **Model** | Hermes-3 (fine-tuned for Hermes agent protocol) | General-purpose (qwen3, qwen2.5-coder, etc.) |
+| **Response time** | ~3–5 seconds | ~90–130 seconds on CPU |
+| **GPU required** | No (cloud GPU) | No (but CPU is slow) |
+| **Cost** | Free tier | Free (but your electricity) |
+| **Agent protocol fit** | Native — Hermes-3 is trained on the exact tool-call and memory schema Hermes uses | Acceptable — general models improvise the protocol |
+
+**The model matters.** Hermes-3 is specifically fine-tuned by NousResearch to follow the Hermes agent protocol — tool routing, memory operations, session continuity, and multi-step planning all work correctly out of the box. General models like qwen3-4b can work but will occasionally misformat tool calls, lose track of context mid-task, or require more retries. On a CPU, each retry costs another 2+ minutes.
+
+**The speed matters.** A 5-second response vs a 124-second response is not just faster — it changes how you work with the agent. Multi-step tasks that take 20 minutes on local CPU complete in 2 minutes on Nous Portal.
 
 Advantages:
 - Free tier available
+- Hermes-3 models — trained specifically for this agent framework
+- Cloud GPU: ~3–5s per response (vs 90–130s on CPU)
 - No local GPU required
 - Fastest onboarding
 - Works on CPU-only machines
@@ -162,13 +178,17 @@ Setup:
 1. Run `hermes model`
 2. Select Nous Portal
 3. Sign in with your Nous account (or create one at nousresearch.com)
-4. Select the free tier model
+4. Select the free tier model (Hermes-3 family)
 
 **Minimum context requirement:** 64,000 tokens. Verify your selected model meets this.
 
 ---
 
 ### 2. Ollama Local (Secondary)
+
+Use Ollama for **offline work or private/sensitive tasks** where you can't send data to a cloud provider. Expect significantly slower responses on CPU-only hardware.
+
+> **Performance note:** qwen3:14b and qwen2.5-coder:14b are solid general models but are NOT fine-tuned for the Hermes agent protocol. Response times of 90–130+ seconds per turn are normal on CPU. For interactive use, Nous Portal is a dramatically better experience.
 
 Ollama runs on **Windows host** — accessed from WSL via `localhost:11434` (mirrored networking).
 
@@ -206,7 +226,16 @@ OPENROUTER_API_KEY=your_key_here
 
 ## Recommended Models
 
-### Ollama
+### Nous Portal (default — use this first)
+
+| Purpose | Model |
+|---------|-------|
+| **Default agent (recommended)** | Hermes-3 free tier (selected via `hermes model` wizard) |
+| Extended context | Any Hermes-3 variant with ≥64k context |
+
+> Hermes-3 is fine-tuned by NousResearch specifically for this agent framework. It is the best model for Hermes regardless of hardware.
+
+### Ollama (offline / private fallback only)
 
 | Purpose | Model |
 |---------|-------|
@@ -215,7 +244,9 @@ OPENROUTER_API_KEY=your_key_here
 | Heavy planning | `qwen3:32b` |
 | Low RAM | `mistral-small` |
 
-### OpenRouter
+> Expect 90–130s+ response times on CPU. Use Nous Portal for interactive work.
+
+### OpenRouter (paid fallback)
 
 | Purpose | Model |
 |---------|-------|
@@ -230,9 +261,8 @@ OPENROUTER_API_KEY=your_key_here
 Minimum required config:
 
 ```env
-# Provider
-OLLAMA_HOST=http://localhost:11434
-OLLAMA_CONTEXT_LENGTH=65536
+# Nous Portal is the default provider — configured via "hermes model" wizard, no env vars needed.
+# The wizard stores your credentials in ~/.hermes/config.yaml.
 
 # Discord
 DISCORD_BOT_TOKEN=your_discord_bot_token
@@ -241,7 +271,11 @@ DISCORD_FREE_RESPONSE_CHANNELS=your_channel_id_here
 # Allow all Discord users to interact
 GATEWAY_ALLOW_ALL_USERS=true
 
-# Optional fallback
+# Optional: Ollama fallback (offline/private work)
+OLLAMA_HOST=http://localhost:11434
+OLLAMA_CONTEXT_LENGTH=65536
+
+# Optional: OpenRouter fallback (paid)
 OPENROUTER_API_KEY=your_key_here
 ```
 

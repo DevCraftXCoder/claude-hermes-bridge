@@ -4,7 +4,9 @@ Auto-sync your Claude Code agents, hooks, and skills to [Hermes Agent](https://g
 
 Every time you write or edit a Claude Code agent, hook, or skill file, a PostToolUse hook fires and the file lands in Hermes's `~/.hermes/skills/` directory — immediately available to the Hermes runtime.
 
-Also includes a **production deployment guide** for getting Hermes running on Windows + WSL2 with Nous Portal (free, no GPU required), Ollama, and Discord.
+Also includes a **production deployment guide** for getting Hermes running on Windows + WSL2.
+
+**Provider recommendation:** Use **Nous Portal** as your default provider. It runs Hermes-3 — models fine-tuned specifically for the Hermes agent protocol — on cloud GPU for ~3–5s responses. It's free and requires no local GPU. Ollama (local CPU) works but is ~90–130s per response and uses general models not tuned for Hermes.
 
 ---
 
