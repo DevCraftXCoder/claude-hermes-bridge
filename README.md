@@ -6,7 +6,7 @@ Every time you write or edit a Claude Code agent, hook, or skill file, a PostToo
 
 Also includes a **production deployment guide** for getting Hermes running on Windows + WSL2.
 
-**Provider recommendation:** Use **Nous Portal** as your default provider. It runs Hermes-3 — models fine-tuned specifically for the Hermes agent protocol — on cloud GPU for ~3–5s responses. It's free and requires no local GPU. Ollama (local CPU) works but is ~90–130s per response and uses general models not tuned for Hermes.
+**Provider recommendation:** Use **OpenRouter** with `openrouter/owl-alpha` as your default provider. It supports tool use (required for Discord gateway), responds in seconds, and works on any hardware. Ollama (local CPU) works for offline/private work. **Nous Portal is NOT recommended** — it does not support tool use and causes HTTP 404 on every Discord message.
 
 ---
 
@@ -176,8 +176,8 @@ claude-hermes-bridge/
 See [PRODUCTION_GUIDE.md](PRODUCTION_GUIDE.md) for the complete setup guide covering:
 
 - Installing Hermes on WSL2 Ubuntu
-- Configuring Nous Portal (free tier, no GPU required)
-- Setting up Ollama as a secondary local provider
+- Configuring OpenRouter with owl-alpha (default)
+- Setting up Ollama as a local offline fallback
 - Discord gateway bot integration
 - tmux persistent service setup
 - Security hardening

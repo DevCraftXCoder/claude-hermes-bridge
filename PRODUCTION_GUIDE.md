@@ -1,12 +1,12 @@
 # Hermes Agent — Production Deployment Guide
 
-Windows 11 + WSL2 + Nous Portal + Ollama + Discord
+Windows 11 + WSL2 + OpenRouter + Ollama + Discord
 
 ---
 
 ## Overview
 
-This guide covers a production-grade Hermes Agent deployment on Windows using WSL2 Ubuntu. It uses **Nous Portal as the default provider** — a free-tier cloud inference service that removes the GPU requirement entirely. Ollama serves as a local fallback for offline or private work.
+This guide covers a production-grade Hermes Agent deployment on Windows using WSL2 Ubuntu. It uses **OpenRouter with `openrouter/owl-alpha` as the default provider** — a cloud inference service that supports tool use (required for Discord gateway), responds in seconds, and works on any hardware.
 
 **Architecture:**
 
@@ -16,11 +16,12 @@ Discord (your bot)
 Hermes Orchestrator (WSL2 Ubuntu ~/.hermes/)
   ↓
 Routing Layer
-  ├─ Nous Portal (DEFAULT — free, no GPU required)
-  ├─ Ollama local (secondary — localhost:11434)
-  ├─ OpenRouter (paid fallback)
+  ├─ OpenRouter (DEFAULT — owl-alpha, supports tool use, required for Discord)
+  ├─ Ollama local (secondary — localhost:11434, offline/private work)
   └─ Codex / worker agents
 ```
+
+> **Nous Portal is NOT supported for Discord gateway.** Nous Portal does not support tool use (function calling). The Hermes Discord gateway sends 29 tools per request — Nous Portal returns HTTP 404 "Couldn't find that, sorry" on every message. Do not use Nous Portal if you want Discord to work.
 
 **Official sources:**
 - Hermes GitHub: https://github.com/NousResearch/hermes-agent
@@ -35,7 +36,7 @@ Routing Layer
 
 - Windows 11 Home / Pro
 - WSL2 Ubuntu (24.04 recommended)
-- CPU-only inference (no GPU required when using Nous Portal)
+- CPU-only (no GPU required when using OpenRouter)
 - Ollama on Windows host, accessible from WSL via `localhost:11434`
 
 ### Recommended
@@ -44,7 +45,7 @@ Routing Layer
 - WSL2 Ubuntu 24.04
 - 32 GB RAM
 - 100 GB free storage
-- GPU optional (Nous Portal removes the GPU requirement)
+- GPU optional (OpenRouter removes the GPU requirement)
 
 ### Minimum
 
@@ -142,53 +143,57 @@ Run the provider wizard:
 hermes model
 ```
 
-**Select Nous Portal as the first/default provider.**
+**Select OpenRouter as the provider. Use `openrouter/owl-alpha` as the model.**
 
 ---
 
 ## Provider Priority
 
-### 1. Nous Portal (Default — Set This First)
+### 1. OpenRouter (Default — Set This First)
 
-**This is the strongly recommended default provider. Use it before anything else.**
+**This is the strongly recommended default provider. Required for Discord gateway.**
 
-#### Why Nous Portal wins
+#### Why OpenRouter wins
 
-| | Nous Portal | Ollama (local CPU) |
-|--|-------------|-------------------|
-| **Model** | Hermes-3 (fine-tuned for Hermes agent protocol) | General-purpose (qwen3, qwen2.5-coder, etc.) |
-| **Response time** | ~3–5 seconds | ~90–130 seconds on CPU |
-| **GPU required** | No (cloud GPU) | No (but CPU is slow) |
-| **Cost** | Free tier | Free (but your electricity) |
-| **Agent protocol fit** | Native — Hermes-3 is trained on the exact tool-call and memory schema Hermes uses | Acceptable — general models improvise the protocol |
+| | OpenRouter (owl-alpha) | Ollama (local CPU) |
+|--|------------------------|-------------------|
+| **Discord gateway** | **Yes** — tool use supported | Yes — tool use supported |
+| **Response time** | ~3–6 seconds | ~90–130 seconds on CPU |
+| **GPU required** | No (cloud) | No (but CPU is slow) |
+| **Cost** | Low (pay-per-token) | Free (electricity only) |
+| **Tool use** | Full support | Full support |
 
-**The model matters.** Hermes-3 is specifically fine-tuned by NousResearch to follow the Hermes agent protocol — tool routing, memory operations, session continuity, and multi-step planning all work correctly out of the box. General models like qwen3-4b can work but will occasionally misformat tool calls, lose track of context mid-task, or require more retries. On a CPU, each retry costs another 2+ minutes.
+**The critical requirement:** The Hermes Discord gateway sends 29 tools per API request. Your provider **must** support tool use (function calling). OpenRouter supports it. Ollama supports it. Nous Portal does NOT — it returns HTTP 404 on every Discord message.
 
-**The speed matters.** A 5-second response vs a 124-second response is not just faster — it changes how you work with the agent. Multi-step tasks that take 20 minutes on local CPU complete in 2 minutes on Nous Portal.
-
-Advantages:
-- Free tier available
-- Hermes-3 models — trained specifically for this agent framework
-- Cloud GPU: ~3–5s per response (vs 90–130s on CPU)
-- No local GPU required
-- Fastest onboarding
-- Works on CPU-only machines
+**The speed advantage:** A 5-second response vs a 124-second response changes how you work. Multi-step tasks that take 20 minutes on local CPU complete in 2 minutes on OpenRouter.
 
 Setup:
-1. Run `hermes model`
-2. Select Nous Portal
-3. Sign in with your Nous account (or create one at nousresearch.com)
-4. Select the free tier model (Hermes-3 family)
+1. Create an account at https://openrouter.ai/
+2. Add your API key to `~/.hermes/.env`:
+   ```env
+   OPENROUTER_API_KEY=your_key_here
+   ```
+3. Run `hermes model` and select OpenRouter
+4. Set model to `openrouter/owl-alpha`
+
+Or edit `~/.hermes/config.yaml` directly:
+
+```yaml
+model:
+  default: "openrouter/owl-alpha"
+  provider: "auto"
+  base_url: "https://openrouter.ai/api/v1"
+```
 
 **Minimum context requirement:** 64,000 tokens. Verify your selected model meets this.
 
 ---
 
-### 2. Ollama Local (Secondary)
+### 2. Ollama Local (Secondary — Offline/Private Work)
 
-Use Ollama for **offline work or private/sensitive tasks** where you can't send data to a cloud provider. Expect significantly slower responses on CPU-only hardware.
+Use Ollama for **offline work or private/sensitive tasks** where you can't send data to a cloud provider. Ollama supports tool use, so the Discord gateway works. Expect significantly slower responses on CPU-only hardware.
 
-> **Performance note:** qwen3:14b and qwen2.5-coder:14b are solid general models but are NOT fine-tuned for the Hermes agent protocol. Response times of 90–130+ seconds per turn are normal on CPU. For interactive use, Nous Portal is a dramatically better experience.
+> **Performance note:** qwen3:14b and qwen2.5-coder:14b are solid models but not optimized for the Hermes agent protocol. Response times of 90–130+ seconds per turn are normal on CPU. For interactive use, OpenRouter is a dramatically better experience.
 
 Ollama runs on **Windows host** — accessed from WSL via `localhost:11434` (mirrored networking).
 
@@ -210,30 +215,39 @@ OLLAMA_CONTEXT_LENGTH=65536
 
 > Without 64k context, Hermes may loop, forget tasks, truncate plans, or fail memory operations.
 
+To switch to Ollama temporarily in `~/.hermes/config.yaml`:
+
+```yaml
+model:
+  default: "qwen3:14b"
+  provider: "ollama"
+  base_url: "http://localhost:11434/v1"
+```
+
 ---
 
-### 3. OpenRouter (Fallback)
+### ⚠️ Nous Portal — NOT Recommended (Discord Incompatible)
 
-Create account: https://openrouter.ai/
+**Nous Portal does not support tool use and will break the Discord gateway.**
 
-Add to `~/.hermes/.env`:
+Root cause: Every Discord message triggers an API call with 29 tools in the request body. Nous Portal returns HTTP 404 "Couldn't find that, sorry" on any request containing a `tools` array. HERMES will never respond to Discord messages on Nous Portal.
 
-```env
-OPENROUTER_API_KEY=your_key_here
-```
+The only workaround is `discord: []` in `platform_toolsets` — which strips all tool access from Discord interactions, making Hermes unable to use memory, run tasks, or access any skills. This is not a viable production configuration.
+
+**If you need a free provider:** Use Ollama locally. It's free, supports tool use, and works with Discord.
 
 ---
 
 ## Recommended Models
 
-### Nous Portal (default — use this first)
+### OpenRouter (default — use this first)
 
 | Purpose | Model |
 |---------|-------|
-| **Default agent (recommended)** | Hermes-3 free tier (selected via `hermes model` wizard) |
-| Extended context | Any Hermes-3 variant with ≥64k context |
-
-> Hermes-3 is fine-tuned by NousResearch specifically for this agent framework. It is the best model for Hermes regardless of hardware.
+| **Default agent (recommended)** | `openrouter/owl-alpha` |
+| Extended context | `anthropic/claude-opus-4.6` (via OpenRouter) |
+| Cost-efficient | `qwen/qwen3-32b` |
+| Vision | `google/gemini-2.5-pro` |
 
 ### Ollama (offline / private fallback only)
 
@@ -244,15 +258,7 @@ OPENROUTER_API_KEY=your_key_here
 | Heavy planning | `qwen3:32b` |
 | Low RAM | `mistral-small` |
 
-> Expect 90–130s+ response times on CPU. Use Nous Portal for interactive work.
-
-### OpenRouter (paid fallback)
-
-| Purpose | Model |
-|---------|-------|
-| Cheap orchestration | `qwen/qwen3-32b` |
-| Premium coding | `anthropic/claude-opus` |
-| Vision | `google/gemini-2.5-pro` |
+> Expect 90–130s+ response times on CPU. Use OpenRouter for interactive work.
 
 ---
 
@@ -261,8 +267,8 @@ OPENROUTER_API_KEY=your_key_here
 Minimum required config:
 
 ```env
-# Nous Portal is the default provider — configured via "hermes model" wizard, no env vars needed.
-# The wizard stores your credentials in ~/.hermes/config.yaml.
+# OpenRouter — default provider (required for Discord gateway)
+OPENROUTER_API_KEY=your_key_here
 
 # Discord
 DISCORD_BOT_TOKEN=your_discord_bot_token
@@ -274,9 +280,6 @@ GATEWAY_ALLOW_ALL_USERS=true
 # Optional: Ollama fallback (offline/private work)
 OLLAMA_HOST=http://localhost:11434
 OLLAMA_CONTEXT_LENGTH=65536
-
-# Optional: OpenRouter fallback (paid)
-OPENROUTER_API_KEY=your_key_here
 ```
 
 Lock permissions:
@@ -284,6 +287,26 @@ Lock permissions:
 ```bash
 chmod 600 ~/.hermes/.env
 ```
+
+---
+
+## config.yaml — Default Working Config
+
+```yaml
+model:
+  default: "openrouter/owl-alpha"
+  provider: "auto"
+  base_url: "https://openrouter.ai/api/v1"
+
+platform_toolsets:
+  cli: [hermes-cli]
+  telegram: [hermes-telegram]
+  discord: [hermes-discord]    # keep this — DO NOT use discord: [] (breaks tool use)
+  whatsapp: [hermes-whatsapp]
+  slack: [hermes-slack]
+```
+
+> **Do NOT set `discord: []`** — this strips all tool access from Discord and makes Hermes unable to use memory, skills, or execute any tasks. Only required as a workaround for Nous Portal (which is not recommended). With OpenRouter or Ollama, `discord: [hermes-discord]` works correctly.
 
 ---
 
@@ -542,8 +565,8 @@ Especially be careful with:
 
 ## API Cost Protection
 
-- Set request caps and daily budgets
-- Prefer Nous Portal (free) before OpenRouter (paid)
+- Set request caps and daily budgets on OpenRouter
+- Fall back to Ollama for offline / private work (free)
 - Avoid recursive loops and uncontrolled background agents
 - Set worker limits
 
@@ -562,29 +585,36 @@ hermes --version
 hermes doctor
 # Expected: all checks green
 
-# 3. Ollama reachable
-curl -s http://localhost:11434/api/tags | grep -o '"name":"[^"]*"' | head -5
-# Expected: at least one model listed
+# 3. OpenRouter reachable
+curl -s -o /dev/null -w "%{http_code}" https://openrouter.ai/api/v1/models \
+  -H "Authorization: Bearer $OPENROUTER_API_KEY" | grep -q "200" && echo "OpenRouter: PASS" || echo "OpenRouter: FAIL"
 
-# 4. Dashboard
+# 4. Ollama reachable (optional)
+curl -s http://localhost:11434/api/tags | grep -o '"name":"[^"]*"' | head -5
+
+# 5. Dashboard
 curl -s http://localhost:4333 > /dev/null && echo "PASS" || echo "FAIL"
 
-# 5. Gateway status
+# 6. Gateway status
 hermes gateway status
 
-# 6. tmux session
+# 7. tmux session
 tmux list-sessions | grep hermes-discord
 
-# 7. Discord log
+# 8. Discord log
 tail -20 ~/.hermes/logs/gateway.log
 # Look for: [Discord] Connected as <YourBot>
 
-# 8. Skills synced
+# 9. Skills synced
 ls ~/.hermes/skills/
 
-# 9. .env permissions
+# 10. .env permissions
 stat -c "%a" ~/.hermes/.env
 # Expected: 600
+
+# 11. Config check — verify provider is NOT nous
+grep -A3 "^model:" ~/.hermes/config.yaml
+# Expected: openrouter/owl-alpha + provider: auto
 ```
 
 Full QA in one pass:
@@ -592,11 +622,12 @@ Full QA in one pass:
 ```bash
 echo "=== Hermes QA ===" && \
 echo -n "[1] Version: " && hermes --version && \
-echo -n "[2] Ollama: " && curl -sf http://localhost:11434/api/tags > /dev/null && echo "PASS" || echo "FAIL" && \
+echo -n "[2] OpenRouter: " && curl -sf -o /dev/null -H "Authorization: Bearer $OPENROUTER_API_KEY" https://openrouter.ai/api/v1/models && echo "PASS" || echo "FAIL" && \
 echo -n "[3] Dashboard: " && curl -sf http://localhost:4333 > /dev/null && echo "PASS" || echo "FAIL" && \
 echo -n "[4] Gateway: " && hermes gateway status 2>&1 | head -1 && \
 echo -n "[5] tmux: " && tmux list-sessions 2>/dev/null | grep hermes-discord && \
 echo -n "[6] .env perms: " && stat -c "%a" ~/.hermes/.env && \
+echo -n "[7] Provider: " && grep "provider:" ~/.hermes/config.yaml | head -1 && \
 echo "=== QA Complete ==="
 ```
 
@@ -606,15 +637,17 @@ echo "=== QA Complete ==="
 
 ```text
 [ ] Hermes v0.14.0+ launches without error
-[ ] Nous Portal configured as default provider
+[ ] OpenRouter API key in ~/.hermes/.env
+[ ] config.yaml: default = "openrouter/owl-alpha"
+[ ] config.yaml: provider = "auto", base_url = "https://openrouter.ai/api/v1"
+[ ] config.yaml: discord: [hermes-discord] (NOT discord: [])
 [ ] Active model context >= 64,000 tokens
-[ ] Ollama reachable at localhost:11434
-[ ] OpenRouter fallback configured (optional)
 [ ] Discord bot token in ~/.hermes/.env
 [ ] DISCORD_FREE_RESPONSE_CHANNELS set
 [ ] GATEWAY_ALLOW_ALL_USERS set (if open access desired)
 [ ] Gateway running in tmux hermes-discord
 [ ] Bot connected (verified in gateway.log)
+[ ] Discord test message receives a response (verify in <6s with OpenRouter)
 [ ] Memory persists across sessions
 [ ] Dashboard accessible at localhost:4333
 [ ] Windows launchers created (cli.bat, gateway.bat, restart.sh)
@@ -625,6 +658,7 @@ echo "=== QA Complete ==="
 [ ] Stable channel pinned
 [ ] Backups configured
 [ ] Brain dump completed in Discord
+[ ] Nous Portal NOT configured as default provider
 ```
 
 ---
@@ -664,8 +698,10 @@ hermes config set
 
 ## Production Recommendations
 
-- Use Nous Portal as default (free, no GPU, zero local compute)
-- Fall back to Ollama for offline / private work
+- Use OpenRouter as default (fast, supports tool use, Discord-compatible)
+- Use `openrouter/owl-alpha` as the default model
+- Fall back to Ollama for offline / private work (free, tool use supported)
+- **Never use Nous Portal for Discord gateway** — no tool use support → HTTP 404
 - Use `tmux hermes-discord` for persistent gateway operation
 - Use a restart script for recoveries from Windows side
 - Pin stable channel — never unstable nightly
