@@ -88,6 +88,10 @@ wsl --shutdown
 Inside Ubuntu / WSL2:
 
 ```bash
+# Review the script before running (recommended):
+curl -fsSL https://hermes-agent.nousresearch.com/install.sh | less
+
+# Then install:
 curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
 ```
 
@@ -356,7 +360,7 @@ cat ~/.hermes/logs/gateway.log
 Run Hermes in a persistent **tmux session** — not a foreground terminal.
 
 ```bash
-tmux new-session -d -s hermes-discord 'hermes gateway'
+tmux new-session -d -s hermes-discord 'hermes gateway run'
 ```
 
 Reattach:
@@ -393,7 +397,7 @@ Starts/restarts the Discord gateway daemon:
 
 ```bat
 @echo off
-wsl -d Ubuntu -- bash -c "tmux kill-session -t hermes-discord 2>/dev/null; tmux new-session -d -s hermes-discord 'hermes gateway'; sleep 2; hermes gateway status"
+wsl -d Ubuntu -- bash -c "tmux kill-session -t hermes-discord 2>/dev/null; tmux new-session -d -s hermes-discord 'hermes gateway run'; sleep 2; hermes gateway status"
 pause
 ```
 
@@ -405,7 +409,7 @@ Full restart from Claude Code or another Windows process:
 #!/usr/bin/env bash
 tmux kill-session -t hermes-discord 2>/dev/null || true
 sleep 1
-tmux new-session -d -s hermes-discord 'hermes gateway'
+tmux new-session -d -s hermes-discord 'hermes gateway run'
 sleep 2
 hermes gateway status
 ```
@@ -592,7 +596,7 @@ curl -s -o /dev/null -w "%{http_code}" https://openrouter.ai/api/v1/models \
 # 4. Ollama reachable (optional)
 curl -s http://localhost:11434/api/tags | grep -o '"name":"[^"]*"' | head -5
 
-# 5. Dashboard
+# 5. Dashboard reachable (returns dashboard SPA HTML — HTTP 200 means service is up)
 curl -s http://localhost:4333 > /dev/null && echo "PASS" || echo "FAIL"
 
 # 6. Gateway status
