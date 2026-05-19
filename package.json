@@ -1,0 +1,29 @@
+{
+  "name": "claude-hermes-bridge",
+  "version": "1.0.0",
+  "description": "Auto-sync Claude Code agents, hooks, and skills to Hermes Agent (WSL2)",
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "pnpm": ">=8",
+    "node": ">=18"
+  },
+  "scripts": {
+    "sync": "node sync/bulk-sync-hermes.cjs",
+    "install-hook": "bash sync/install.sh"
+  },
+  "keywords": [
+    "claude-code",
+    "hermes",
+    "hermes-agent",
+    "nousresearch",
+    "wsl2",
+    "ai-agents",
+    "skill-sync"
+  ],
+  "author": "DevCraftXCoder",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DevCraftXCoder/claude-hermes-bridge.git"
+  }
+}
