@@ -1,20 +1,21 @@
 {
-  "timestamp": "2026-05-19T21:13:53.488Z",
+  "timestamp": "2026-05-19T21:48:28.574Z",
   "tests": [
     {
       "test": "connectivity",
       "provider": "openrouter",
-      "model": "nousresearch/hermes-3-llama-3.1-405b:free",
-      "status": "warn",
-      "latencyMs": 299,
-      "error": "openrouter HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"nousresearch/hermes-3-llama-3.1-405b:free is temporarily rate-limited upstream. Please retry shortly, o"
+      "model": "nousresearch/hermes-3-llama-3.1-405b",
+      "status": "ok",
+      "latencyMs": 889,
+      "responseLength": 50,
+      "preview": "{\"status\":\"ok\",\"provider\":\"code_quality_analyzer\"}"
     },
     {
       "test": "connectivity",
       "provider": "ollama",
       "model": "qwen2.5-coder:14b",
       "status": "ok",
-      "latencyMs": 12075,
+      "latencyMs": 11811,
       "responseLength": 37,
       "preview": "{\"status\":\"ok\",\"provider\":\"CodeQwen\"}"
     },
@@ -23,35 +24,35 @@
       "provider": "hermes",
       "model": "hermes-configured",
       "status": "warn",
-      "latencyMs": 20008,
+      "latencyMs": 20019,
       "error": "hermes one-shot failed: spawnSync C:\\Windows\\system32\\cmd.exe ETIMEDOUT"
     },
     {
       "test": "completion",
-      "provider": "hermes",
-      "model": "hermes-configured",
+      "provider": "openrouter",
+      "model": "nousresearch/hermes-3-llama-3.1-405b",
       "status": "ok",
-      "latencyMs": 86727,
+      "latencyMs": 15201,
       "hypothesesCount": 3
     },
     {
       "test": "json_extraction",
-      "provider": "ollama",
+      "provider": "openrouter",
       "status": "ok",
-      "latencyMs": 6879,
+      "latencyMs": 919,
       "jsonValid": true
     }
   ],
   "summary": {
-    "totalMs": 125991,
-    "passCount": 3,
+    "totalMs": 48841,
+    "passCount": 4,
     "failCount": 0,
-    "warnCount": 2,
+    "warnCount": 1,
     "providerChain": [
       "openrouter",
       "ollama",
       "hermes"
     ],
-    "firstAvailable": "ollama"
+    "firstAvailable": "openrouter"
   }
 }

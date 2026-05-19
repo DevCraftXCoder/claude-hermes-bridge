@@ -8,7 +8,7 @@ const path = require('node:path');
 const PROVIDERS = [
   {
     name: 'openrouter',
-    model: 'nousresearch/hermes-3-llama-3.1-405b:free',
+    model: 'nousresearch/hermes-3-llama-3.1-405b',
     baseUrl: 'https://openrouter.ai/api/v1/chat/completions',
     envKey: 'OPENROUTER_API_KEY',
   },
