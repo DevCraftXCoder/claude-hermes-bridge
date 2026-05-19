@@ -34,14 +34,15 @@ The `llm.cjs` helper tries providers in order until one succeeds:
 
 | Priority | Provider | Model | Cost | Latency | When |
 |----------|----------|-------|------|---------|------|
-| 1 | OpenRouter | owl-alpha (Hermes 3 405B) | Free | ~3-8s | Default — fast, capable |
-| 2 | Ollama | qwen2.5-coder:14b | Free | ~10-30s | When OpenRouter is down or rate-limited |
-| 3 | Hermes CLI | configured model | Varies | ~15-60s | Emergency fallback via `hermes -z` |
+| 1 | OpenRouter | Hermes 3 405B (via DeepInfra) | Free | ~2s | Default — fast, capable |
+| 2 | Ollama | qwen2.5-coder:14b | Free | ~2-12s | When OpenRouter is down or rate-limited |
+| 3 | Hermes CLI | openrouter/owl-alpha | Free | ~8s | Fallback via `hermes -z` |
 
 ### OpenRouter (Primary)
 
-- Model: `nousresearch/hermes-3-llama-3.1-405b:free`
-- Free tier, no credit card needed
+- Model: `nousresearch/hermes-3-llama-3.1-405b`
+- Free credits, no credit card needed
+- Do NOT use the `:free` suffix — it routes through Venice's free pool which has aggressive upstream rate limits
 - Requires `OPENROUTER_API_KEY` in env or `~/.hermes/.env`
 - Get a key: https://openrouter.ai/keys
 

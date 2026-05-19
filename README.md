@@ -162,22 +162,32 @@ The `autoresearch/` directory adds LLM-powered hypothesis generation to the auto
 
 ### Provider Chain
 
-| Priority | Provider | Model | Cost |
-|----------|----------|-------|------|
-| 1 | OpenRouter | owl-alpha (Hermes 3 405B) | Free |
-| 2 | Ollama | qwen2.5-coder:14b | Free (local) |
-| 3 | Hermes CLI | configured model | Varies |
+| Priority | Provider | Model | Cost | Latency |
+|----------|----------|-------|------|---------|
+| 1 | OpenRouter | Hermes 3 405B (via DeepInfra) | Free | ~2s |
+| 2 | Ollama | qwen2.5-coder:14b | Free (local) | ~2-12s |
+| 3 | Hermes CLI | openrouter/owl-alpha | Free | ~8s |
+
+### Benchmark (2026-05-19)
+
+```
+5 PASS / 0 WARN / 0 FAIL — all 3 providers operational
+  openrouter: 2.3s | ollama: 2.3s | hermes: 8s
+```
 
 ### Quick Start
 
 ```bash
-# 1. Configure Hermes for autoresearch
+# 1. Add your OpenRouter key to .env
+echo "OPENROUTER_API_KEY=sk-or-v1-..." > .env
+
+# 2. Configure Hermes for autoresearch
 pnpm hermes-config
 
-# 2. Run the benchmark to verify all providers
+# 3. Run the benchmark to verify all providers
 pnpm benchmark
 
-# 3. Save JSON report for tracking
+# 4. Save JSON report for tracking
 pnpm benchmark:json
 ```
 
