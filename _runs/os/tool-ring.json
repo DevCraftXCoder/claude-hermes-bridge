@@ -1,10 +1,30 @@
-{"tool":"Bash","ts":1779218347032,"command":"cd \"C:/Users/J/Documents/claude-hermes-bridge\" && git init && git add . && git commit -m \"Initial commit: claude-hermes-bridge — Claude Code to Hermes Agent skill sync\" 2>&1"}
-{"tool":"Bash","ts":1779218358435,"command":"cd \"C:/Users/J/Documents/claude-hermes-bridge\" && gh repo create claude-hermes-bridge --public --source=. --remote=origin --push 2>&1"}
-{"tool":"Read","ts":1779218388912,"filePath":"C:\\Users\\J\\Documents\\claude-hermes-bridge\\PRODUCTION_GUIDE.md"}
-{"tool":"Edit","ts":1779218409232,"filePath":"C:\\Users\\J\\Documents\\claude-hermes-bridge\\PRODUCTION_GUIDE.md"}
-{"tool":"Read","ts":1779218413664,"filePath":"C:\\Users\\J\\Documents\\claude-hermes-bridge\\PRODUCTION_GUIDE.md"}
-{"tool":"Read","ts":1779218416463,"filePath":"C:\\Users\\J\\Documents\\claude-hermes-bridge\\PRODUCTION_GUIDE.md"}
-{"tool":"Edit","ts":1779218430656,"filePath":"C:\\Users\\J\\Documents\\claude-hermes-bridge\\PRODUCTION_GUIDE.md"}
-{"tool":"Edit","ts":1779218442061,"filePath":"C:\\Users\\J\\Documents\\claude-hermes-bridge\\PRODUCTION_GUIDE.md"}
-{"tool":"Read","ts":1779218445545,"filePath":"C:\\Users\\J\\Documents\\claude-hermes-bridge\\README.md"}
-{"tool":"Edit","ts":1779218454443,"filePath":"C:\\Users\\J\\Documents\\claude-hermes-bridge\\README.md"}
+{"tool":"Bash","ts":1779227287752,"command":"cd C:/Za/claude-hermes-bridge && node -e \"\nconst fs = require('fs');\nconst lines = fs.readFileSync('.env','utf8').split('\\n');\nconst key = lines.find(l=>l.startsWith('OPENROUTER_API_KEY=')).split('=')"}
+{"tool":"Edit","ts":1779227300546,"filePath":"C:\\Za\\claude-hermes-bridge\\autoresearch\\lib\\llm.cjs"}
+{"tool":"Bash","ts":1779227358889,"command":"cd C:/Za/claude-hermes-bridge && node autoresearch/benchmark.cjs --verbose --json 2>&1"}
+{"tool":"Bash","ts":1779227371936,"command":"cd C:/Za/claude-hermes-bridge && git add autoresearch/lib/llm.cjs _runs/benchmark-latest.json && git commit -m \"$(cat <<'EOF'\nfix(openrouter): switch from :free to paid model — clears upstream 429 rat"}
+{"tool":"Bash","ts":1779227426985,"command":"cd C:/Za/claude-hermes-bridge && node -e \"const fs=require('fs'); const key=fs.readFileSync('.env','utf8').split('\\n').find(l=>l.startsWith('OPENROUTER_API_KEY=')).split('=').slice(1).join('=').trim()"}
+{"tool":"Write","ts":1779227452905,"filePath":"C:\\Za\\claude-hermes-bridge\\autoresearch\\fix-hermes-env.cjs"}
+{"tool":"Bash","ts":1779227460147,"command":"cd C:/Za/claude-hermes-bridge && node autoresearch/fix-hermes-env.cjs 2>&1"}
+{"tool":"Bash","ts":1779227467975,"command":"wsl -d Ubuntu -- bash -lc \"grep '^OPENROUTER_API_KEY=' ~/.hermes/.env | head -c 30\" 2>&1"}
+{"tool":"Bash","ts":1779227487134,"command":"wsl -d Ubuntu -- bash -lc \"timeout 30 hermes -z 'Say OK and nothing else' 2>&1\" 2>&1"}
+{"tool":"Bash","ts":1779227529312,"command":"cd C:/Za/claude-hermes-bridge && node autoresearch/benchmark.cjs --verbose --json 2>&1"}
+{"tool":"Bash","ts":1779227550950,"command":"cd C:/Za/claude-hermes-bridge && rm autoresearch/fix-hermes-env.cjs && git add autoresearch/lib/llm.cjs _runs/benchmark-latest.json && git commit -m \"$(cat <<'EOF'\nfix(hermes): set OpenRouter key in ~"}
+{"tool":"Read","ts":1779227602901,"filePath":"C:\\Za\\claude-hermes-bridge\\README.md"}
+{"tool":"Edit","ts":1779227821045,"filePath":"C:\\Za\\claude-hermes-bridge\\README.md"}
+{"tool":"Edit","ts":1779227831569,"filePath":"C:\\Za\\claude-hermes-bridge\\docs\\autoresearch-hermes-playbook.md"}
+{"tool":"Bash","ts":1779227841660,"command":"cd C:/Za/claude-hermes-bridge && git add README.md docs/autoresearch-hermes-playbook.md && git commit -m \"$(cat <<'EOF'\ndocs: update autoresearch section — benchmark results, correct model names\n\nAll "}
+{"tool":"Bash","ts":1779376655565,"command":"cd C:/Za/claude-hermes-bridge && git add README.md && git diff --cached --stat"}
+{"tool":"Bash","ts":1779376857797,"command":"cd C:/Za/claude-hermes-bridge && git commit -m \"docs: update README — remove Nous, default Ollama+OpenRouter, add provider resolution, troubleshooting, Discord gateway\""}
+{"tool":"Read","ts":1779376905048,"filePath":"C:\\Za\\DevCraftXCoder\\README.md"}
+{"tool":"Bash","ts":1779377024513,"command":"cd C:/Za/claude-hermes-bridge && git push"}
+{"tool":"Bash","ts":1779377037394,"command":"cd C:/Za/claude-hermes-bridge && cat package.json"}
+{"tool":"Glob","ts":1779377041763}
+{"tool":"Glob","ts":1779377041765}
+{"tool":"Read","ts":1779377046783,"filePath":"C:\\Za\\claude-hermes-bridge\\autoresearch\\hermes-config.sh"}
+{"tool":"Read","ts":1779377047095,"filePath":"C:\\Za\\claude-hermes-bridge\\autoresearch\\lib\\llm.cjs"}
+{"tool":"Edit","ts":1779377058558,"filePath":"C:\\Za\\claude-hermes-bridge\\autoresearch\\lib\\llm.cjs"}
+{"tool":"Write","ts":1779377074187,"filePath":"C:\\Za\\claude-hermes-bridge\\autoresearch\\hermes-config.sh"}
+{"tool":"Grep","ts":1779377079228}
+{"tool":"Read","ts":1779377084204,"filePath":"C:\\Za\\claude-hermes-bridge\\PRODUCTION_GUIDE.md"}
+{"tool":"Agent","ts":1779377375532}
+{"tool":"Grep","ts":1779377383671}

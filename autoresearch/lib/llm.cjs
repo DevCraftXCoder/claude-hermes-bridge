@@ -7,16 +7,16 @@ const path = require('node:path');
 
 const PROVIDERS = [
   {
-    name: 'openrouter',
-    model: 'nousresearch/hermes-3-llama-3.1-405b',
-    baseUrl: 'https://openrouter.ai/api/v1/chat/completions',
-    envKey: 'OPENROUTER_API_KEY',
-  },
-  {
     name: 'ollama',
-    model: 'qwen2.5-coder:14b',
+    model: 'qwen3:14b',
     baseUrl: 'http://localhost:11434/v1/chat/completions',
     envKey: null,
+  },
+  {
+    name: 'openrouter',
+    model: 'google/gemini-2.5-flash',
+    baseUrl: 'https://openrouter.ai/api/v1/chat/completions',
+    envKey: 'OPENROUTER_API_KEY',
   },
   {
     name: 'hermes',

@@ -1,0 +1,12 @@
+{"hook":"post-tool-dispatch","event":"PostToolUse","duration_ms":261,"timestamp":"2026-05-21T15:24:32.033Z","blocked":false,"exit_code":0}
+{"hook":"post-tool-dispatch","event":"PostToolUse","duration_ms":204,"timestamp":"2026-05-21T15:25:20.972Z","blocked":false,"exit_code":0}
+{"hook":"post-tool-dispatch","event":"PostToolUse","duration_ms":419,"timestamp":"2026-05-21T15:25:36.629Z","blocked":false,"exit_code":0}
+{"hook":"post-tool-dispatch","event":"PostToolUse","duration_ms":500,"timestamp":"2026-05-21T15:26:00.680Z","blocked":false,"exit_code":0}
+{"hook":"post-tool-dispatch","event":"PostToolUse","duration_ms":357,"timestamp":"2026-05-21T15:26:09.065Z","blocked":false,"exit_code":0}
+{"hook":"post-tool-dispatch","event":"PostToolUse","duration_ms":428,"timestamp":"2026-05-21T15:26:45.696Z","blocked":false,"exit_code":0}
+{"hook":"post-tool-dispatch","event":"PostToolUse","duration_ms":100,"timestamp":"2026-05-21T15:26:59.135Z","blocked":false,"exit_code":0}
+{"hook":"post-tool-dispatch","event":"PostToolUse","duration_ms":219,"timestamp":"2026-05-21T15:27:22.771Z","blocked":false,"exit_code":0}
+{"hook":"post-tool-dispatch","event":"PostToolUse","duration_ms":762,"timestamp":"2026-05-21T15:27:32.773Z","blocked":false,"exit_code":0}
+{"hook":"post-tool-dispatch","event":"PostToolUse","duration_ms":95,"timestamp":"2026-05-21T15:27:50.575Z","blocked":false,"exit_code":0}
+{"hook":"post-tool-dispatch","event":"PostToolUse","duration_ms":283,"timestamp":"2026-05-21T15:28:31.115Z","blocked":false,"exit_code":0}
+{"hook":"post-tool-dispatch","event":"PostToolUse","duration_ms":754,"timestamp":"2026-05-21T15:29:01.423Z","blocked":false,"exit_code":0}

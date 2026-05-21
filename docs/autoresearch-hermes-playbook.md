@@ -14,8 +14,8 @@ autoresearch harness (scripts/autoresearch/harness.cjs)
   │     │
   │     └── planner uses lib/llm.cjs
   │           │
-  │           ├── 1. OpenRouter (owl-alpha, free)
-  │           ├── 2. Ollama (qwen2.5-coder:14b, local CPU)
+  │           ├── 1. Ollama (qwen3:14b, local CPU, free)
+  │           ├── 2. OpenRouter (google/gemini-2.5-flash, cloud fallback)
   │           └── 3. Hermes one-shot (wsl hermes -z, configured model)
   │
   ├── remeasure phase  ← deterministic
@@ -32,26 +32,27 @@ autoresearch harness (scripts/autoresearch/harness.cjs)
 
 The `llm.cjs` helper tries providers in order until one succeeds:
 
-| Priority | Provider | Model | Cost | Latency | When |
-|----------|----------|-------|------|---------|------|
-| 1 | OpenRouter | Hermes 3 405B (via DeepInfra) | Free | ~2s | Default — fast, capable |
-| 2 | Ollama | qwen2.5-coder:14b | Free | ~2-12s | When OpenRouter is down or rate-limited |
-| 3 | Hermes CLI | openrouter/owl-alpha | Free | ~8s | Fallback via `hermes -z` |
+| Priority | Provider | Model | Cost | Latency | Context | When |
+|----------|----------|-------|------|---------|---------|------|
+| 1 | Ollama | qwen3:14b | Free | ~90–130s | 65,536 | Default — local, free, private |
+| 2 | OpenRouter | google/gemini-2.5-flash | Free tier | ~2–4s | 1,048,576 | When Ollama is slow or down |
+| 3 | Hermes CLI | (Hermes configured model) | Free | ~8s | varies | Last resort via `hermes -z` |
 
-### OpenRouter (Primary)
+### Ollama (Primary)
 
-- Model: `nousresearch/hermes-3-llama-3.1-405b`
-- Free credits, no credit card needed
-- Do NOT use the `:free` suffix — it routes through Venice's free pool which has aggressive upstream rate limits
+- Model: `qwen3:14b`
+- Runs on Windows-native Ollama at `localhost:11434`
+- No API key needed — completely free
+- Set `OLLAMA_CONTEXT_LENGTH=65536` in env (required — default context too small)
+- Pull the model: `ollama pull qwen3:14b`
+
+### OpenRouter (Secondary)
+
+- Model: `google/gemini-2.5-flash`
+- Free tier available (1M context, fast)
 - Requires `OPENROUTER_API_KEY` in env or `~/.hermes/.env`
 - Get a key: https://openrouter.ai/keys
-
-### Ollama (Secondary)
-
-- Model: `qwen2.5-coder:14b`
-- Runs on Windows-native Ollama at `localhost:11434`
-- No API key needed
-- Pull the model: `ollama pull qwen2.5-coder:14b`
+- Do NOT use the `:free` suffix — it routes through Venice's free pool which has aggressive upstream rate limits
 
 ### Hermes One-Shot (Tertiary)
 
@@ -71,9 +72,9 @@ wsl -d Ubuntu -- bash /mnt/c/Za/claude-hermes-bridge/autoresearch/hermes-config.
 ```
 
 This checks:
-- Hermes model set to owl-alpha
-- OpenRouter API key present
+- Hermes model set to qwen3:14b (Ollama primary)
 - Ollama reachable + models available
+- OpenRouter API key present (optional fallback)
 
 ### 2. Run the benchmark
 
@@ -87,18 +88,18 @@ Expected output:
 === Autoresearch ↔ Hermes LLM Benchmark ===
 
 Test 1: Provider connectivity...
-  [PASS] openrouter (nousresearch/hermes-3-llama-3.1-405b:free) — 2340ms
-  [PASS] ollama (qwen2.5-coder:14b) — 890ms
+  [PASS] ollama (qwen3:14b) — 94000ms
+  [PASS] openrouter (google/gemini-2.5-flash) — 2100ms
   [PASS] hermes (hermes-configured) — 5200ms
 
 Test 2: Full completion (hypothesis generation)...
-  [PASS] openrouter — 4100ms — 3 hypotheses generated
+  [PASS] ollama — 98000ms — 3 hypotheses generated
 
 Test 3: JSON extraction from LLM response...
-  [PASS] openrouter — 1800ms — JSON valid: true
+  [PASS] ollama — 96000ms — JSON valid: true
 
 === Summary ===
-  Total time: 14330ms
+  Total time: 305000ms
   Results: 6 PASS / 0 WARN / 0 FAIL
 ```
 
@@ -150,11 +151,15 @@ The LLM generates concrete hypotheses. The harness then applies them one at a ti
 
 ## Troubleshooting
 
-**OpenRouter 429 (rate limited)**: Free tier has limits. Falls through to Ollama automatically.
+**Ollama slow (90–130s)**: Normal on CPU-only hardware. For faster autoresearch runs, switch to OpenRouter (`google/gemini-2.5-flash`) by setting `OPENROUTER_API_KEY` — the chain falls through automatically.
 
 **Ollama connection refused**: Start Ollama on Windows (`ollama serve`). The WSL bridge auto-connects to Windows localhost.
 
-**Hermes one-shot hangs**: Check `wsl -d Ubuntu -- bash -lc "hermes status"`. May need `hermes login` for Nous Portal.
+**Ollama context too small**: Ensure `OLLAMA_CONTEXT_LENGTH=65536` is set. Without this, Hermes may truncate plans or loop on long tasks.
+
+**OpenRouter 429 (rate limited)**: Free tier has limits. Falls through to Hermes one-shot automatically.
+
+**Hermes one-shot hangs**: Check `wsl -d Ubuntu -- bash -lc "hermes status"`. Verify Hermes is configured and `hermes doctor` passes.
 
 **JSON parse failures**: The `completeJSON()` helper extracts JSON from markdown code blocks or raw JSON objects. If the LLM wraps output in explanation text, it still works. Lower `temperature` to 0 for more deterministic JSON output.
 
