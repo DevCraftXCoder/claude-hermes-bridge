@@ -4,9 +4,9 @@ Auto-sync your Claude Code agents, hooks, and skills to [Hermes Agent](https://g
 
 Every time you write or edit a Claude Code agent, hook, or skill file, a PostToolUse hook fires and the file lands in Hermes's `~/.hermes/skills/` directory — immediately available to the Hermes runtime.
 
-Also includes a **production deployment guide** for getting Hermes running on Windows + WSL2.
+Also includes a **production deployment guide** for getting Hermes running on Windows + WSL2, and an **autoresearch integration** for LLM-powered hypothesis generation.
 
-**Provider recommendation:** Use **OpenRouter** with `openrouter/owl-alpha` as your default provider. It supports tool use (required for Discord gateway), responds in seconds, and works on any hardware. Ollama (local CPU) works for offline/private work. **Nous Portal is NOT recommended** — it does not support tool use and causes HTTP 404 on every Discord message.
+**Provider defaults:** Ollama (local, private, zero cost) is the primary provider. OpenRouter is the automatic fallback for when Ollama is unavailable or you need models with larger context windows (e.g. Gemini 2.5 Flash with 1M context). No external API key required for basic local use.
 
 ---
 
@@ -31,23 +31,83 @@ Category names are configurable via environment variables (see [Configuration](#
 - Node.js available in your Windows PATH
 - Claude Code CLI
 
-### 2. Install the sync hook
+### 2. One-shot install
 
 ```bash
-# Clone this repo
 git clone https://github.com/DevCraftXCoder/claude-hermes-bridge.git
 cd claude-hermes-bridge
+pnpm install
+```
 
-# Run installer (auto-detects your .claude dir)
+This sets up the sync hooks and configures Hermes with correct defaults:
+- **Primary model:** `qwen3:14b` via Ollama (local, free, no API key needed)
+- **Fallback model:** `google/gemini-2.5-flash` via OpenRouter (free tier, 1M context)
+- **Compression:** disabled (avoids 64K context window requirement on compression model)
+- **Context length:** 65536 minimum (Hermes hard requirement)
+
+### 3. Configure your LLM provider
+
+**Option A — Ollama only (default, no API key needed):**
+
+```bash
+# Make sure Ollama is running
+ollama serve
+
+# Pull a model (14B recommended for CPU inference)
+ollama pull qwen3:14b
+```
+
+Hermes config (`~/.hermes/config.yaml`):
+```yaml
+model:
+  default: "qwen3:14b"
+  provider: "custom"
+  base_url: "http://localhost:11434/v1"
+  context_length: 65536
+compression:
+  enabled: false
+```
+
+Hermes env (`~/.hermes/.env`):
+```bash
+OPENAI_API_KEY=ollama
+OPENAI_BASE_URL=http://localhost:11434/v1
+```
+
+**Option B — OpenRouter (faster, larger context, free tier available):**
+
+```bash
+# Add your OpenRouter key
+echo "OPENROUTER_API_KEY=sk-or-v1-..." >> ~/.hermes/.env
+```
+
+Hermes config (`~/.hermes/config.yaml`):
+```yaml
+model:
+  default: "google/gemini-2.5-flash"
+  provider: "openrouter"
+  base_url: "https://openrouter.ai/api/v1"
+  context_length: 1048576
+compression:
+  enabled: false
+```
+
+> **Important:** After changing providers, wipe `~/.hermes/auth.json` credential cache:
+> ```bash
+> echo '{"providers":{},"credential_pool":{},"active_provider":""}' > ~/.hermes/auth.json
+> ```
+> Hermes caches provider credentials in `auth.json` and will ignore `config.yaml` changes if stale credentials exist.
+
+### 4. Install the sync hook
+
+```bash
 bash sync/install.sh
 
 # Or specify a path explicitly
 bash sync/install.sh --dir "C:/Users/YourName/YourProject/.claude"
 ```
 
-The installer copies `sync-hermes.cjs` and `bulk-sync-hermes.cjs` into your `.claude/hooks/` directory and prints the `settings.json` registration snippet.
-
-### 3. Register in Claude Code settings
+### 5. Register in Claude Code settings
 
 Add to your `.claude/settings.json`:
 
@@ -69,7 +129,7 @@ Add to your `.claude/settings.json`:
 }
 ```
 
-### 4. Run the initial bulk sync
+### 6. Run the initial bulk sync
 
 Sync all existing agents, hooks, and skills in one shot:
 
@@ -77,15 +137,51 @@ Sync all existing agents, hooks, and skills in one shot:
 node .claude/hooks/bulk-sync-hermes.cjs
 ```
 
-### 5. Verify
+### 7. Verify
 
 ```bash
 wsl -d Ubuntu -- ls ~/.hermes/skills/
 # Expected: cc-agents  cc-hooks  cc-skills
 
-wsl -d Ubuntu -- ls ~/.hermes/skills/cc-agents | wc -l
-# Number of agents synced
+wsl -d Ubuntu -- bash -lc "hermes chat"
+# Should respond within seconds (Ollama) or ~2s (OpenRouter)
 ```
+
+---
+
+## Provider Resolution Order
+
+Hermes resolves providers in this priority (highest wins):
+
+1. `~/.hermes/auth.json` → `credential_pool` (cached tokens)
+2. `~/.hermes/auth.json` → `active_provider`
+3. `~/.hermes/.env` auto-detection (`OPENROUTER_API_KEY`, `OPENAI_API_KEY`)
+4. `~/.hermes/config.yaml` → `model.provider` + `model.base_url`
+
+**This means `auth.json` overrides everything.** If you change providers in `config.yaml` but Hermes still uses the old one, wipe `auth.json` (see step 3 above).
+
+The `base_url` field in `config.yaml` is the real routing control — it determines where API calls go regardless of the `provider` name.
+
+---
+
+## Discord Gateway Bot
+
+Hermes includes a Discord gateway bot that responds to messages in configured channels.
+
+```bash
+# Add to ~/.hermes/.env
+DISCORD_BOT_TOKEN=your_bot_token
+DISCORD_HOME_CHANNEL=your_channel_id
+DISCORD_FREE_RESPONSE_CHANNELS=your_channel_id
+
+# Start gateway in tmux (persistent)
+wsl -d Ubuntu -- bash -c "tmux new-session -d -s hermes-gw 'hermes gateway run 2>&1 | tee ~/.hermes/logs/gateway.log'"
+
+# Or use the Windows launcher
+# Copy hermes-launcher.bat to Desktop for one-click startup
+```
+
+The gateway requires a model that supports tool use. OpenRouter models (e.g. `google/gemini-2.5-flash`) support this out of the box. Ollama models may not support tool use depending on the model.
 
 ---
 
@@ -122,7 +218,7 @@ A Claude Code **PostToolUse Write|Edit** hook. Every time Claude writes or edits
 5. 5-second per-file debounce prevents redundant syncs on burst edits
 6. Always exits 0 — never blocks Claude Code writes
 
-The **Windows temp → WSL copy** strategy avoids all bash escaping issues with complex file content.
+The **Windows temp -> WSL copy** strategy avoids all bash escaping issues with complex file content.
 
 ### Bulk sync (`bulk-sync-hermes.cjs`)
 
@@ -150,13 +246,11 @@ Once installed, you can ask Claude things like:
 - `/paste random` — get a random prompt
 - `/paste browse` — browse all categories
 
-**Install the plugin** via Claude Code's plugin manager (or manually via your Claude Code settings). After installation, Claude will have access to all `/paste` tools in every session automatically.
-
 > The paste plugin is especially useful alongside Hermes — paste prompts can seed Hermes memory, define agent personas, or provide structured instructions for skill workflows.
 
 ---
 
-## Autoresearch ↔ Hermes LLM Integration
+## Autoresearch Integration
 
 The `autoresearch/` directory adds LLM-powered hypothesis generation to the autoresearch measurement loop. Measures stay deterministic — LLMs only enter at the **plan** phase.
 
@@ -164,25 +258,25 @@ The `autoresearch/` directory adds LLM-powered hypothesis generation to the auto
 
 | Priority | Provider | Model | Cost | Latency |
 |----------|----------|-------|------|---------|
-| 1 | OpenRouter | Hermes 3 405B (via DeepInfra) | Free | ~2s |
-| 2 | Ollama | qwen2.5-coder:14b | Free (local) | ~2-12s |
-| 3 | Hermes CLI | openrouter/owl-alpha | Free | ~8s |
+| 1 | Ollama | qwen3:14b | Free (local) | ~2-12s |
+| 2 | OpenRouter | google/gemini-2.5-flash | Free tier | ~2s |
+| 3 | Hermes CLI | (inherits config.yaml model) | Depends on config | ~8s |
 
-### Benchmark (2026-05-19)
+### Benchmark (2026-05-21)
 
 ```
-5 PASS / 0 WARN / 0 FAIL — all 3 providers operational
-  openrouter: 2.3s | ollama: 2.3s | hermes: 8s
+5 PASS / 0 WARN / 0 FAIL — all providers operational
+  ollama: 2.3s | openrouter: 2.3s | hermes: 9.5s
 ```
 
 ### Quick Start
 
 ```bash
-# 1. Add your OpenRouter key to .env
-echo "OPENROUTER_API_KEY=sk-or-v1-..." > .env
-
-# 2. Configure Hermes for autoresearch
+# 1. Configure providers (Ollama is default — no key needed)
 pnpm hermes-config
+
+# 2. (Optional) Add OpenRouter key for fallback
+echo "OPENROUTER_API_KEY=sk-or-v1-..." >> .env
 
 # 3. Run the benchmark to verify all providers
 pnpm benchmark
@@ -204,6 +298,25 @@ See [docs/autoresearch-hermes-playbook.md](docs/autoresearch-hermes-playbook.md)
 
 ---
 
+## Troubleshooting
+
+### Hermes ignores my config.yaml changes
+Wipe the credential cache: `echo '{"providers":{},"credential_pool":{},"active_provider":""}' > ~/.hermes/auth.json`
+
+### "context window too small" / compression model errors
+Set `compression: enabled: false` in config.yaml. Hermes requires 64K minimum context for both main and compression models — disabling compression avoids this.
+
+### Slow responses (minutes instead of seconds)
+Check `hermes doctor` output. Common cause: Hermes is retrying a dead provider (3 attempts x exponential backoff) before falling through to the configured one. Fix by wiping auth.json and ensuring config.yaml points to the correct base_url.
+
+### "No LLM provider configured"
+Hermes needs either: (a) `OPENROUTER_API_KEY` in .env, or (b) `OPENAI_API_KEY` + `OPENAI_BASE_URL` in .env, or (c) a valid `active_provider` in auth.json. The simplest fix: add `OPENAI_API_KEY=ollama` and `OPENAI_BASE_URL=http://localhost:11434/v1` to `~/.hermes/.env`.
+
+### AMD GPU (RDNA4) not detected by Ollama
+Ollama v0.18.x doesn't support RDNA4 (RX 9060 XT). CPU inference works fine. Check for Ollama updates — ROCm support is being added.
+
+---
+
 ## Files
 
 ```
@@ -217,7 +330,7 @@ claude-hermes-bridge/
 │   └── install.sh                   Quick installer
 ├── autoresearch/
 │   ├── lib/
-│   │   └── llm.cjs                  LLM client — 3-provider fallback chain
+│   │   └── llm.cjs                  LLM client — provider fallback chain
 │   ├── measures/
 │   │   └── _planner-template.cjs    Copy + customize for your domain
 │   ├── benchmark.cjs                QA benchmark (connectivity, completion, JSON)
@@ -233,10 +346,11 @@ claude-hermes-bridge/
 See [PRODUCTION_GUIDE.md](PRODUCTION_GUIDE.md) for the complete setup guide covering:
 
 - Installing Hermes on WSL2 Ubuntu
-- Configuring OpenRouter with owl-alpha (default)
-- Setting up Ollama as a local offline fallback
+- Configuring Ollama as the default local provider
+- Setting up OpenRouter as automatic fallback
 - Discord gateway bot integration
 - tmux persistent service setup
+- Provider resolution order and auth.json gotchas
 - Security hardening
 - QA checklist
 - Backup strategy
@@ -263,10 +377,12 @@ function syncToHermes(name, content, category) {
 
 ## Requirements
 
-- Node.js ≥ 18
+- Node.js >= 18
 - Windows 11 with WSL2
 - Hermes Agent v0.14.0+ in WSL (`~/.hermes/`)
 - Claude Code CLI
+- **Local inference (optional):** Ollama with qwen3:14b or similar
+- **Cloud inference (optional):** OpenRouter API key (free tier available)
 
 ---
 
