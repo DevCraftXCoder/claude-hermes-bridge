@@ -107,35 +107,6 @@ function wslUnixPath(winPath) {
     .replace(/^([A-Za-z]):/, (_, d) => `/mnt/${d.toLowerCase()}`);
 }
 
-function syncToHermes(name, content, category) {
-  // [P1-B] Validate all values that appear in the shell command before use.
-  assertSafeId(name, 'skill name');
-  assertSafeId(category, 'category');
-  const wslUser = getWslUser();
-  assertSafeId(wslUser, 'WSL username');
-
-  const skillDir  = `/home/${wslUser}/.hermes/skills/${category}/${name}`;
-  const skillFile = `${skillDir}/SKILL.md`;
-
-  const tmpId   = createHash('sha256').update(`${Date.now()}-${name}-${Math.random()}`).digest('hex').slice(0, 16);
-  const tmpWin  = path.join(os.tmpdir(), `hermes-bulk-${tmpId}.md`);
-  const tmpUnix = wslUnixPath(tmpWin);
-  fs.writeFileSync(tmpWin, content, 'utf8');
-
-  try {
-    execSync(
-      `wsl -d ${WSL_DISTRO} -- bash -c "mkdir -p '${skillDir}' && cp '${tmpUnix}' '${skillFile}'"`,
-      { windowsHide: true, stdio: 'pipe', timeout: 15_000 }
-    );
-    return true;
-  } catch (err) {
-    process.stderr.write(`[bulk-sync] FAIL ${category}/${name}: ${err.message}\n`);
-    return false;
-  } finally {
-    try { fs.unlinkSync(tmpWin); } catch { /* ignore */ }
-  }
-}
-
 function extractFirstComment(src) {
   const lines = src.split('\n');
   const block = [];
@@ -147,6 +118,49 @@ function extractFirstComment(src) {
     }
   }
   return block.join('\n').trim();
+}
+
+// [Perf Fix 1] Batch all copies into one WSL command per category.
+// Cuts ~95 sequential WSL spawns to 3 (one per category).
+// Chunks at 50 files to stay within ARG_MAX.
+const CHUNK_SIZE = 50;
+
+function batchSyncToHermes(items, category) {
+  assertSafeId(category, 'category');
+  const wslUser = getWslUser();
+  assertSafeId(wslUser, 'WSL username');
+
+  const results = [];
+
+  for (let i = 0; i < items.length; i += CHUNK_SIZE) {
+    const chunk = items.slice(i, i + CHUNK_SIZE);
+    const pairs = chunk.map(({ name, content }) => {
+      assertSafeId(name, 'skill name');
+      const tmpId  = createHash('sha256').update(`${Date.now()}-${name}-${Math.random()}`).digest('hex').slice(0, 16);
+      const tmpWin = path.join(os.tmpdir(), `hermes-bulk-${tmpId}.md`);
+      fs.writeFileSync(tmpWin, content, 'utf8');
+      const destDir  = `/home/${wslUser}/.hermes/skills/${category}/${name}`;
+      const destFile = `${destDir}/SKILL.md`;
+      return { name, tmpWin, tmpUnix: wslUnixPath(tmpWin), destDir, destFile };
+    });
+
+    const cmds = pairs
+      .map(p => `mkdir -p '${p.destDir}' && cp '${p.tmpUnix}' '${p.destFile}'`)
+      .join(' && ');
+
+    try {
+      execSync(`wsl -d ${WSL_DISTRO} -- bash -c "${cmds}"`,
+        { windowsHide: true, stdio: 'pipe', timeout: 30_000 });
+      for (const p of pairs) results.push({ name: p.name, ok: true });
+    } catch (err) {
+      process.stderr.write(`[bulk-sync] FAIL batch ${category} chunk ${Math.floor(i / CHUNK_SIZE)}: ${err.message}\n`);
+      for (const p of pairs) results.push({ name: p.name, ok: false });
+    } finally {
+      for (const p of pairs) try { fs.unlinkSync(p.tmpWin); } catch {}
+    }
+  }
+
+  return results;
 }
 
 // ── Initialize ───────────────────────────────────────────────────────────────
@@ -164,6 +178,7 @@ let failed = 0;
 const agentsDir = path.join(claudeDir, 'agents');
 if (fs.existsSync(agentsDir)) {
   process.stdout.write(`── Agents ──\n`);
+  const agentItems = [];
   for (const file of fs.readdirSync(agentsDir).sort()) {
     if (!file.endsWith('.md')) continue;
     const name = file.replace(/\.md$/, '');
@@ -176,9 +191,14 @@ if (fs.existsSync(agentsDir)) {
       '',
       raw,
     ].join('\n');
-    const ok = syncToHermes(name, content, CAT_AGENTS);
-    if (ok) { synced++; process.stdout.write(`  ✓ ${name}\n`); }
-    else     { failed++; }
+    agentItems.push({ name, content });
+  }
+  if (agentItems.length > 0) {
+    const results = batchSyncToHermes(agentItems, CAT_AGENTS);
+    for (const r of results) {
+      if (r.ok) { synced++; process.stdout.write(`  ✓ ${r.name}\n`); }
+      else      { failed++; }
+    }
   }
 }
 
@@ -187,6 +207,7 @@ if (fs.existsSync(agentsDir)) {
 const hooksDir = path.join(claudeDir, 'hooks');
 if (fs.existsSync(hooksDir)) {
   process.stdout.write(`\n── Hooks ──\n`);
+  const hookItems = [];
   for (const file of fs.readdirSync(hooksDir).sort()) {
     if (!file.endsWith('.cjs')) continue;
     if (file.startsWith('_')) continue; // skip archived hooks
@@ -211,9 +232,14 @@ if (fs.existsSync(hooksDir)) {
       raw.length > 3000 ? `\n// ... (${raw.length - 3000} chars truncated)` : '',
       '```',
     ].join('\n');
-    const ok = syncToHermes(name, content, CAT_HOOKS);
-    if (ok) { synced++; process.stdout.write(`  ✓ ${name}\n`); }
-    else     { failed++; }
+    hookItems.push({ name, content });
+  }
+  if (hookItems.length > 0) {
+    const results = batchSyncToHermes(hookItems, CAT_HOOKS);
+    for (const r of results) {
+      if (r.ok) { synced++; process.stdout.write(`  ✓ ${r.name}\n`); }
+      else      { failed++; }
+    }
   }
 }
 
@@ -222,6 +248,7 @@ if (fs.existsSync(hooksDir)) {
 const skillsDir = path.join(claudeDir, 'skills');
 if (fs.existsSync(skillsDir)) {
   process.stdout.write(`\n── Skills ──\n`);
+  const skillItems = [];
   for (const entry of fs.readdirSync(skillsDir).sort()) {
     const skillFile = path.join(skillsDir, entry, 'SKILL.md');
     if (!fs.existsSync(skillFile)) continue;
@@ -234,9 +261,14 @@ if (fs.existsSync(skillsDir)) {
       '',
       raw,
     ].join('\n');
-    const ok = syncToHermes(entry, content, CAT_SKILLS);
-    if (ok) { synced++; process.stdout.write(`  ✓ ${entry}\n`); }
-    else     { failed++; }
+    skillItems.push({ name: entry, content });
+  }
+  if (skillItems.length > 0) {
+    const results = batchSyncToHermes(skillItems, CAT_SKILLS);
+    for (const r of results) {
+      if (r.ok) { synced++; process.stdout.write(`  ✓ ${r.name}\n`); }
+      else      { failed++; }
+    }
   }
 }
 

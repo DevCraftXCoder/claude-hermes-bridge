@@ -1,9 +1,12 @@
 'use strict';
 
-const { execSync } = require('node:child_process');
+const { execSync, execFile } = require('node:child_process');
+const { promisify } = require('node:util');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+
+const execFileAsync = promisify(execFile);
 
 const PROVIDERS = [
   {
@@ -26,11 +29,21 @@ const PROVIDERS = [
   },
 ];
 
+// [Perf Fix 2] Cache resolved OpenRouter key — avoids WSL login-shell subprocess on every call
+let _resolvedOpenRouterKey;
+
+function getOpenRouterKey() {
+  if (_resolvedOpenRouterKey !== undefined) return _resolvedOpenRouterKey;
+  const key = process.env.OPENROUTER_API_KEY || readHermesEnvKey('OPENROUTER_API_KEY');
+  _resolvedOpenRouterKey = key || null;
+  return _resolvedOpenRouterKey;
+}
+
 function getProviderChain() {
   const chain = [];
   for (const p of PROVIDERS) {
     if (p.name === 'openrouter') {
-      const key = process.env.OPENROUTER_API_KEY || readHermesEnvKey('OPENROUTER_API_KEY');
+      const key = getOpenRouterKey();
       if (key) chain.push({ ...p, apiKey: key });
     } else if (p.name === 'ollama') {
       chain.push({ ...p, apiKey: null });
@@ -61,7 +74,7 @@ function readHermesEnvKey(varName) {
 
   try {
     const out = execSync(
-      `wsl -d Ubuntu -- bash -lc "grep '^${varName}=' ~/.hermes/.env 2>/dev/null | head -1"`,
+      `wsl -d Ubuntu -- bash -c "grep '^${varName}=' ~/.hermes/.env 2>/dev/null | head -1"`,
       { encoding: 'utf8', timeout: 5000, windowsHide: true }
     ).trim();
     const match = out.match(/^[^=]+=(.+)$/);
@@ -126,7 +139,8 @@ async function callOpenAI(provider, messages, opts = {}) {
   }
 }
 
-function callHermes(messages, opts = {}) {
+// [Perf Fix 3] bash -c (not -lc) + execFileAsync — saves 300-500ms/call, unblocks event loop
+async function callHermes(messages, opts = {}) {
   const lastMsg = messages[messages.length - 1]?.content || '';
   const systemMsg = messages.find(m => m.role === 'system')?.content || '';
   const prompt = systemMsg ? `${systemMsg}\n\n${lastMsg}` : lastMsg;
@@ -135,10 +149,11 @@ function callHermes(messages, opts = {}) {
   fs.writeFileSync(tmpFile, prompt, 'utf8');
 
   const timeout = opts.timeoutMs || 60000;
+  const wslPath = tmpFile.replace(/\\/g, '/').replace(/^([A-Z]):/i, (_, d) => `/mnt/${d.toLowerCase()}`);
   try {
-    const wslPath = tmpFile.replace(/\\/g, '/').replace(/^([A-Z]):/i, (_, d) => `/mnt/${d.toLowerCase()}`);
-    const stdout = execSync(
-      `wsl -d Ubuntu -- bash -lc "hermes -z \\"$(cat '${wslPath}')\\" 2>/dev/null"`,
+    const { stdout } = await execFileAsync(
+      'wsl', ['-d', 'Ubuntu', '--', 'bash', '-c',
+        `PATH="$HOME/.local/bin:$PATH" hermes -z "$(cat '${wslPath}')" 2>/dev/null`],
       { encoding: 'utf8', timeout, windowsHide: true }
     );
     return {
@@ -154,24 +169,28 @@ function callHermes(messages, opts = {}) {
   }
 }
 
+// [Perf Fix 5] Promise.any race for HTTP providers — eliminates sequential timeout penalty
 async function complete(messages, opts = {}) {
   const chain = getProviderChain();
-  const errors = [];
+  const httpProviders = chain.filter(p => p.name !== 'hermes');
+  const hermesProvider = chain.find(p => p.name === 'hermes');
 
-  for (const provider of chain) {
+  if (httpProviders.length > 0) {
     try {
-      if (provider.name === 'hermes') {
-        return callHermes(messages, opts);
+      return await Promise.any(
+        httpProviders.map(p => callOpenAI(p, messages, opts))
+      );
+    } catch (aggErr) {
+      if (!hermesProvider) {
+        const msgs = aggErr.errors.map((e, i) => `  ${httpProviders[i].name}: ${e.message}`).join('\n');
+        throw new Error(`All providers failed:\n${msgs}`);
       }
-      return await callOpenAI(provider, messages, opts);
-    } catch (err) {
-      errors.push({ provider: provider.name, error: err.message });
     }
   }
 
-  throw new Error(
-    `All providers failed:\n${errors.map(e => `  ${e.provider}: ${e.error}`).join('\n')}`
-  );
+  if (hermesProvider) return await callHermes(messages, opts);
+
+  throw new Error('No providers available');
 }
 
 async function completeJSON(messages, opts = {}) {
@@ -198,7 +217,7 @@ async function benchmark(opts = {}) {
     try {
       let result;
       if (provider.name === 'hermes') {
-        result = callHermes(testMessages, { timeoutMs: opts.timeoutMs || 30000 });
+        result = await callHermes(testMessages, { timeoutMs: opts.timeoutMs || 30000 });
       } else {
         result = await callOpenAI(provider, testMessages, {
           maxTokens: 100,

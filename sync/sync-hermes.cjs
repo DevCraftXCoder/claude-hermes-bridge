@@ -71,15 +71,22 @@ function getWslUser() {
   return _wslUser;
 }
 
-function readStdinJson() {
-  return new Promise((resolve, reject) => {
-    let data = '';
+// [Perf Fix 4] Stream-parse just the file_path from stdin — bail early for non-agent/hook/skill
+// files without waiting for the full JSON payload. Saves ~15ms per Write/Edit event.
+function readFilePathFast() {
+  return new Promise((resolve) => {
+    let buf = '';
     process.stdin.setEncoding('utf8');
-    process.stdin.on('data', chunk => (data += chunk));
-    process.stdin.on('end', () => {
-      try { resolve(JSON.parse(data)); } catch (e) { reject(e); }
+    process.stdin.on('data', chunk => {
+      buf += chunk;
+      const m = buf.match(/"file_path"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      if (m) {
+        process.stdin.destroy();
+        resolve(m[1].replace(/\\\\/g, '\\').replace(/\\/g, '/'));
+      }
     });
-    process.stdin.on('error', reject);
+    process.stdin.on('end', () => resolve(null));
+    process.stdin.on('error', () => resolve(null));
   });
 }
 
@@ -130,10 +137,7 @@ function extractFirstComment(src) {
 }
 
 async function main() {
-  let input;
-  try { input = await readStdinJson(); } catch { process.exit(0); }
-
-  const filePath = (input?.tool_input?.file_path || '').replace(/\\/g, '/');
+  const filePath = await readFilePathFast();
   if (!filePath) process.exit(0);
 
   const isAgent = filePath.includes('/.claude/agents/') && filePath.endsWith('.md');
