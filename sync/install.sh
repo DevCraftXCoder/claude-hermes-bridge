@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
-# install.sh — Claude Hermes Bridge quick installer
-# Copies sync hooks into your .claude/hooks/ directory and shows registration steps.
+# install.sh — Claude Hermes Bridge full installer
+#
+# Handles first-time users with no Hermes install:
+#   1. Verifies WSL2 + Ubuntu are available
+#   2. Installs Hermes Agent inside WSL if not found
+#   3. Copies sync hooks into .claude/hooks/
+#   4. Drops hermes-chat.bat on your Windows Desktop
+#   5. Prints settings.json registration snippet
+#   6. Prints bulk-sync command
 #
 # Usage (from repo root):
 #   bash sync/install.sh
@@ -9,12 +16,12 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+WSL_DISTRO="${HERMES_WSL_DISTRO:-Ubuntu}"
 
 # ── Resolve target .claude/hooks dir ─────────────────────────────────────────
 
 TARGET_DIR=""
-
-# Check for --dir flag
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dir) TARGET_DIR="$2"; shift 2 ;;
@@ -23,7 +30,6 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$TARGET_DIR" ]]; then
-  # Auto-detect
   candidates=(
     "$(pwd)/.claude"
     "$HOME/.claude"
@@ -45,27 +51,131 @@ fi
 HOOKS_DIR="$TARGET_DIR/hooks"
 mkdir -p "$HOOKS_DIR"
 
-echo "Installing to: $HOOKS_DIR"
+# ── Step 1: WSL2 check ────────────────────────────────────────────────────────
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "STEP 1/6 — WSL2 Check"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+WSL_CMD="wsl"
+command -v wsl.exe &>/dev/null && WSL_CMD="wsl.exe"
+
+if ! command -v wsl.exe &>/dev/null && ! command -v wsl &>/dev/null; then
+  echo ""
+  echo "ERROR: WSL2 not found."
+  echo ""
+  echo "Install it by running this in PowerShell (Administrator):"
+  echo "  wsl --install"
+  echo ""
+  echo "Then reboot, open Ubuntu, and re-run this script."
+  exit 1
+fi
+
+if ! $WSL_CMD -d "$WSL_DISTRO" -- bash -c "echo ok" &>/dev/null; then
+  echo ""
+  echo "ERROR: WSL distro '$WSL_DISTRO' not found."
+  echo ""
+  echo "Install Ubuntu with:"
+  echo "  wsl --install -d Ubuntu"
+  echo ""
+  echo "Or set HERMES_WSL_DISTRO to match your distro name."
+  $WSL_CMD --list 2>/dev/null || true
+  exit 1
+fi
+
+echo "  ✓ WSL2 + $WSL_DISTRO ready"
 echo ""
 
-# ── Copy files ────────────────────────────────────────────────────────────────
+# ── Step 2: Install Hermes if missing ────────────────────────────────────────
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "STEP 2/6 — Hermes Agent"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+HERMES_PATH=$($WSL_CMD -d "$WSL_DISTRO" -- bash -lc "command -v hermes 2>/dev/null || echo ''" 2>/dev/null | tr -d '\r')
+
+if [[ -z "$HERMES_PATH" ]]; then
+  echo "  Hermes not found — installing now..."
+  echo "  (This downloads from hermes-agent.nousresearch.com)"
+  echo ""
+  $WSL_CMD -d "$WSL_DISTRO" -- bash -lc "
+    set -e
+    curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+
+    # Add ~/.local/bin to PATH if not already present
+    if ! grep -q '.local/bin' ~/.bashrc 2>/dev/null; then
+      echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.bashrc
+    fi
+    if ! grep -q '.local/bin' ~/.profile 2>/dev/null; then
+      echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.profile
+    fi
+
+    # Pin to stable channel
+    export PATH=\"\$HOME/.local/bin:\$PATH\"
+    hermes update --channel stable
+    echo '--- Hermes install complete ---'
+  "
+  echo ""
+  echo "  ✓ Hermes installed (stable channel)"
+else
+  echo "  ✓ Hermes already installed: $HERMES_PATH"
+  # Keep it on stable
+  $WSL_CMD -d "$WSL_DISTRO" -- bash -lc "hermes update --channel stable 2>/dev/null" || true
+fi
+
+echo ""
+
+# ── Step 3: Copy sync hooks ───────────────────────────────────────────────────
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "STEP 3/6 — Sync Hooks  →  $HOOKS_DIR/"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 cp "$SCRIPT_DIR/sync-hermes.cjs"      "$HOOKS_DIR/sync-hermes.cjs"
 cp "$SCRIPT_DIR/bulk-sync-hermes.cjs" "$HOOKS_DIR/bulk-sync-hermes.cjs"
 
-echo "  ✓ sync-hermes.cjs       → $HOOKS_DIR/"
-echo "  ✓ bulk-sync-hermes.cjs  → $HOOKS_DIR/"
+echo "  ✓ sync-hermes.cjs"
+echo "  ✓ bulk-sync-hermes.cjs"
 echo ""
 
-# ── Settings.json instructions ────────────────────────────────────────────────
+# ── Step 4: Desktop shortcut ──────────────────────────────────────────────────
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "STEP 4/6 — Desktop Shortcut"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+DESKTOP_DIR=""
+
+# Try cmd.exe first (Git Bash on Windows)
+if command -v cmd.exe &>/dev/null; then
+  WIN_UP="$(cmd.exe /c "echo %USERPROFILE%" 2>/dev/null | tr -d '\r')"
+  # Convert C:\Users\J → /c/Users/J
+  DESKTOP_DIR="$(echo "$WIN_UP" | sed 's|\\|/|g; s|^\([A-Za-z]\):|/\L\1|')/Desktop"
+fi
+
+# Fallback: use $USERPROFILE env var if set (Git Bash sets it)
+if [[ -z "$DESKTOP_DIR" ]] && [[ -n "$USERPROFILE" ]]; then
+  DESKTOP_DIR="$(echo "$USERPROFILE" | sed 's|\\|/|g; s|^\([A-Za-z]\):|/\L\1|')/Desktop"
+fi
+
+if [[ -n "$DESKTOP_DIR" ]] && [[ -d "$DESKTOP_DIR" ]]; then
+  cp "$REPO_ROOT/hermes-chat.bat" "$DESKTOP_DIR/hermes-chat.bat"
+  echo "  ✓ hermes-chat.bat  →  Desktop"
+  echo "    Double-click to open Hermes chat in any terminal."
+else
+  echo "  ! Could not detect Desktop path."
+  echo "    Copy manually:  $REPO_ROOT/hermes-chat.bat  →  Desktop"
+fi
+
+echo ""
+
+# ── Step 5: Settings.json snippet ────────────────────────────────────────────
 
 HOOK_PATH="$HOOKS_DIR/sync-hermes.cjs"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "NEXT STEP: Register the hook in your Claude Code settings.json"
+echo "STEP 5/6 — Register hook in .claude/settings.json"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-echo "Add this block to your .claude/settings.json under postToolUse:"
 echo ""
 cat <<JSON
 {
@@ -85,27 +195,20 @@ cat <<JSON
 }
 JSON
 echo ""
-echo "Or if settings.json already has a postToolUse Write|Edit block, add:"
+echo "Already have a postToolUse Write|Edit block? Just add:"
 echo "  { \"type\": \"command\", \"command\": \"node $HOOK_PATH\" }"
 echo ""
+
+# ── Step 6: Initial bulk sync ─────────────────────────────────────────────────
+
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "RUN INITIAL BULK SYNC"
+echo "STEP 6/6 — Initial Bulk Sync"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "To sync all existing agents/hooks/skills to Hermes right now:"
+echo "Sync all existing agents/hooks/skills to Hermes now:"
 echo "  node $HOOKS_DIR/bulk-sync-hermes.cjs"
 echo ""
-echo "Or with a custom .claude dir:"
-echo "  node $HOOKS_DIR/bulk-sync-hermes.cjs --dir /path/to/.claude"
-echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "OPTIONAL ENV VARS"
+echo "  Install complete."
+echo "  Open Hermes chat:  double-click hermes-chat.bat on your Desktop"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-echo "  HERMES_WSL_DISTRO=Ubuntu          (default: Ubuntu)"
-echo "  HERMES_WSL_USER=yourname          (default: auto-detected)"
-echo "  HERMES_CATEGORY_AGENTS=cc-agents  (default: cc-agents)"
-echo "  HERMES_CATEGORY_HOOKS=cc-hooks    (default: cc-hooks)"
-echo "  HERMES_CATEGORY_SKILLS=cc-skills  (default: cc-skills)"
-echo ""
-echo "Done."

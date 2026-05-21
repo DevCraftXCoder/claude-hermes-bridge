@@ -26,24 +26,33 @@ Category names are configurable via environment variables (see [Configuration](#
 
 ### 1. Prerequisites
 
-- Windows 11 with WSL2 (Ubuntu)
-- [Hermes Agent](https://github.com/NousResearch/hermes-agent) installed in WSL (`~/.hermes/`)
-- Node.js available in your Windows PATH
+- Windows 11 with WSL2 (Ubuntu) — the installer checks this and tells you what to install if missing
+- Node.js >= 18 in your Windows PATH
 - Claude Code CLI
 
-### 2. One-shot install
+**No Hermes install needed first** — the installer handles it.
+
+### 2. Clone and run the installer
 
 ```bash
 git clone https://github.com/DevCraftXCoder/claude-hermes-bridge.git
 cd claude-hermes-bridge
-pnpm install
+bash sync/install.sh
 ```
 
-This sets up the sync hooks and configures Hermes with correct defaults:
-- **Primary model:** `qwen3:14b` via Ollama (local, free, no API key needed)
-- **Fallback model:** `google/gemini-2.5-flash` via OpenRouter (free tier, 1M context)
-- **Compression:** disabled (avoids 64K context window requirement on compression model)
-- **Context length:** 65536 minimum (Hermes hard requirement)
+The installer runs 6 steps automatically:
+
+1. Verifies WSL2 + Ubuntu are available
+2. Installs Hermes Agent inside WSL (skips if already installed)
+3. Copies sync hooks into your `.claude/hooks/` directory
+4. Drops **`hermes-chat.bat`** on your Windows Desktop — double-click to open Hermes chat
+5. Prints the `settings.json` snippet to register the auto-sync hook
+6. Prints the bulk-sync command for your first sync
+
+```bash
+# Custom .claude path:
+bash sync/install.sh --dir "C:/Users/YourName/YourProject/.claude"
+```
 
 ### 3. Configure your LLM provider
 
@@ -98,18 +107,9 @@ compression:
 > ```
 > Hermes caches provider credentials in `auth.json` and will ignore `config.yaml` changes if stale credentials exist.
 
-### 4. Install the sync hook
+### 4. Register the hook in Claude Code settings
 
-```bash
-bash sync/install.sh
-
-# Or specify a path explicitly
-bash sync/install.sh --dir "C:/Users/YourName/YourProject/.claude"
-```
-
-### 5. Register in Claude Code settings
-
-Add to your `.claude/settings.json`:
+Add the snippet printed by the installer to your `.claude/settings.json`:
 
 ```json
 {
@@ -129,7 +129,7 @@ Add to your `.claude/settings.json`:
 }
 ```
 
-### 6. Run the initial bulk sync
+### 5. Run the initial bulk sync
 
 Sync all existing agents, hooks, and skills in one shot:
 
@@ -137,14 +137,13 @@ Sync all existing agents, hooks, and skills in one shot:
 node .claude/hooks/bulk-sync-hermes.cjs
 ```
 
-### 7. Verify
+### 6. Verify
 
 ```bash
 wsl -d Ubuntu -- ls ~/.hermes/skills/
 # Expected: cc-agents  cc-hooks  cc-skills
 
-wsl -d Ubuntu -- bash -lc "hermes chat"
-# Should respond within seconds (Ollama) or ~2s (OpenRouter)
+# Or just double-click hermes-chat.bat on your Desktop
 ```
 
 ---
@@ -324,10 +323,11 @@ claude-hermes-bridge/
 ├── README.md
 ├── PRODUCTION_GUIDE.md              Full Hermes + Windows/WSL2 deployment guide
 ├── package.json                     pnpm project file
+├── hermes-chat.bat                  Desktop shortcut — double-click to open Hermes chat
 ├── sync/
 │   ├── sync-hermes.cjs              PostToolUse auto-sync hook
 │   ├── bulk-sync-hermes.cjs         One-time bulk sync script
-│   └── install.sh                   Quick installer
+│   └── install.sh                   Full installer (installs Hermes + hooks + Desktop shortcut)
 ├── autoresearch/
 │   ├── lib/
 │   │   └── llm.cjs                  LLM client — provider fallback chain
