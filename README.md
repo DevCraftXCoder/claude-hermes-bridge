@@ -56,13 +56,53 @@ bash sync/install.sh --dir "C:/Users/YourName/YourProject/.claude"
 
 ### 3. Configure your LLM provider
 
-**Option A — Ollama only (default, no API key needed):**
+**Option A — Both providers (recommended):**
+
+Use OpenRouter as your default (cloud models, 1M context) and add `ollama-local` as a named provider for local models (free, private, zero latency).
 
 ```bash
-# Make sure Ollama is running
-ollama serve
+# 1. Pull local models
+ollama pull qwen2.5-coder:14b   # Best local coding (9GB)
+ollama pull qwen2.5-coder:7b    # Lighter coding (4.7GB)
+ollama pull llama3.2:latest      # General chat (2GB, supports tool calling)
+```
 
-# Pull a model (14B recommended for CPU inference)
+Hermes config (`~/.hermes/config.yaml`):
+```yaml
+model:
+  default: "google/gemini-2.5-flash"
+  provider: "openrouter"
+  context_length: 1048576
+compression:
+  enabled: false
+
+# Named provider for local Ollama — used by --provider ollama-local
+providers:
+  ollama-local:
+    base_url: http://localhost:11434/v1
+    api_key: ollama
+    request_timeout_seconds: 300
+```
+
+Hermes env (`~/.hermes/.env`):
+```bash
+OPENROUTER_API_KEY=sk-or-v1-your-key-here
+
+# IMPORTANT: Do NOT set OPENAI_API_KEY here — it overrides the
+# ollama-local provider's api_key and routes local models to OpenRouter.
+# Only set OLLAMA_HOST for Ollama connectivity:
+OLLAMA_HOST=http://localhost:11434
+```
+
+Usage:
+```bash
+hermes chat --provider openrouter --model google/gemini-2.5-flash
+hermes chat --provider ollama-local --model qwen2.5-coder:14b
+```
+
+**Option B — Ollama only (no API key needed):**
+
+```bash
 ollama pull qwen3:14b
 ```
 
@@ -70,23 +110,23 @@ Hermes config (`~/.hermes/config.yaml`):
 ```yaml
 model:
   default: "qwen3:14b"
-  provider: "custom"
-  base_url: "http://localhost:11434/v1"
+  provider: "ollama-local"
   context_length: 65536
 compression:
   enabled: false
+
+providers:
+  ollama-local:
+    base_url: http://localhost:11434/v1
+    api_key: ollama
+    request_timeout_seconds: 300
 ```
 
-Hermes env (`~/.hermes/.env`):
-```bash
-OPENAI_API_KEY=ollama
-OPENAI_BASE_URL=http://localhost:11434/v1
-```
+No `.env` keys needed — Ollama runs locally without auth.
 
-**Option B — OpenRouter (faster, larger context, free tier available):**
+**Option C — OpenRouter only:**
 
 ```bash
-# Add your OpenRouter key
 echo "OPENROUTER_API_KEY=sk-or-v1-..." >> ~/.hermes/.env
 ```
 
@@ -95,7 +135,6 @@ Hermes config (`~/.hermes/config.yaml`):
 model:
   default: "google/gemini-2.5-flash"
   provider: "openrouter"
-  base_url: "https://openrouter.ai/api/v1"
   context_length: 1048576
 compression:
   enabled: false
@@ -106,6 +145,20 @@ compression:
 > echo '{"providers":{},"credential_pool":{},"active_provider":""}' > ~/.hermes/auth.json
 > ```
 > Hermes caches provider credentials in `auth.json` and will ignore `config.yaml` changes if stale credentials exist.
+
+### Ollama model compatibility
+
+Not all Ollama models support tool calling, which Hermes requires. Models that **work**:
+- `qwen2.5-coder:7b` / `qwen2.5-coder:14b` — tool support, great for coding
+- `llama3.2:latest` (3B) — tool support, general chat
+- `qwen3:14b` — tool support, strong reasoning
+
+Models that **don't work** (no tool calling):
+- `llama3:latest` (8B) — returns "does not support tools" error
+- `codellama:latest` — no tool support
+- `gemma:latest` — no tool support
+
+Check before pulling: `ollama show <model> --template | grep -i tool`
 
 ### 4. Register the hook in Claude Code settings
 
@@ -137,13 +190,37 @@ Sync all existing agents, hooks, and skills in one shot:
 node .claude/hooks/bulk-sync-hermes.cjs
 ```
 
-### 6. Verify
+### 6. Generate model launchers
+
+After install, generate `.bat` launchers and desktop shortcuts for all supported models:
+
+```bash
+pnpm launchers        # .bat files + desktop shortcuts
+pnpm launchers:bat-only  # .bat files only (no shortcuts)
+```
+
+This creates 6 launchers — 3 OpenRouter (cloud) + 3 Ollama (local):
+
+| Shortcut | Provider | Model | Notes |
+|----------|----------|-------|-------|
+| Hermes Gemini | OpenRouter | `google/gemini-2.5-flash` | 1M context, fast |
+| Hermes Codex | OpenRouter | `openai/gpt-4o` | GPT-4o via OpenRouter |
+| Hermes Qwen | OpenRouter | `qwen/qwen3-30b-a3b` | Qwen3 30B MoE |
+| Hermes Ollama Coder14B | Ollama local | `qwen2.5-coder:14b` | Best local coding model |
+| Hermes Ollama Coder7B | Ollama local | `qwen2.5-coder:7b` | Lighter coding model |
+| Hermes Ollama Llama3 | Ollama local | `llama3.2:latest` | General chat, 3B |
+
+Each launcher opens a Windows Terminal tab (or cmd fallback) running Hermes in WSL.
+
+**Custom launchers:** Edit the `LAUNCHERS` array in `launchers/generate-launchers.cjs` to add your own models — any model available on OpenRouter or pulled in Ollama works.
+
+### 7. Verify
 
 ```bash
 wsl -d Ubuntu -- ls ~/.hermes/skills/
 # Expected: cc-agents  cc-hooks  cc-skills
 
-# Or just double-click hermes-chat.bat on your Desktop
+# Or double-click any Hermes shortcut on your Desktop
 ```
 
 ---
@@ -299,6 +376,15 @@ See [docs/autoresearch-hermes-playbook.md](docs/autoresearch-hermes-playbook.md)
 
 ## Troubleshooting
 
+### Ollama models route to OpenRouter instead of localhost
+**Root cause:** `OPENAI_API_KEY` is set in `~/.hermes/.env`. Hermes uses this key for the `custom` provider, and it takes precedence over the `ollama-local` provider's `api_key` field. **Fix:** Comment out or remove `OPENAI_API_KEY` from `~/.hermes/.env`. OpenRouter uses `OPENROUTER_API_KEY` (separate key), so commenting out `OPENAI_API_KEY` doesn't break OpenRouter models.
+
+### Ollama model hangs / times out
+Small Ollama models (7B, 14B) can be slow on the first request because Ollama needs to load the model into memory. Pre-warm the model: `ollama run qwen2.5-coder:7b "hi"`. Subsequent requests are fast. Also, Hermes sends tool definitions in every request — models under 3B may struggle with the payload size.
+
+### "does not support tools" error
+The Ollama model doesn't support tool calling. Switch to a model that does: `qwen2.5-coder:7b`, `qwen2.5-coder:14b`, `llama3.2:latest`, or `qwen3:14b`. See the [Ollama model compatibility](#ollama-model-compatibility) table.
+
 ### Hermes ignores my config.yaml changes
 Wipe the credential cache: `echo '{"providers":{},"credential_pool":{},"active_provider":""}' > ~/.hermes/auth.json`
 
@@ -309,7 +395,7 @@ Set `compression: enabled: false` in config.yaml. Hermes requires 64K minimum co
 Check `hermes doctor` output. Common cause: Hermes is retrying a dead provider (3 attempts x exponential backoff) before falling through to the configured one. Fix by wiping auth.json and ensuring config.yaml points to the correct base_url.
 
 ### "No LLM provider configured"
-Hermes needs either: (a) `OPENROUTER_API_KEY` in .env, or (b) `OPENAI_API_KEY` + `OPENAI_BASE_URL` in .env, or (c) a valid `active_provider` in auth.json. The simplest fix: add `OPENAI_API_KEY=ollama` and `OPENAI_BASE_URL=http://localhost:11434/v1` to `~/.hermes/.env`.
+Hermes needs either: (a) `OPENROUTER_API_KEY` in .env, or (b) a `providers:` block in config.yaml with valid base_url/api_key, or (c) a valid `active_provider` in auth.json.
 
 ### AMD GPU (RDNA4) not detected by Ollama
 Ollama v0.18.x doesn't support RDNA4 (RX 9060 XT). CPU inference works fine. Check for Ollama updates — ROCm support is being added.
@@ -328,6 +414,8 @@ claude-hermes-bridge/
 │   ├── sync-hermes.cjs              PostToolUse auto-sync hook
 │   ├── bulk-sync-hermes.cjs         One-time bulk sync script
 │   └── install.sh                   Full installer (installs Hermes + hooks + Desktop shortcut)
+├── launchers/
+│   └── generate-launchers.cjs       Generates .bat + desktop shortcuts for all models
 ├── autoresearch/
 │   ├── lib/
 │   │   └── llm.cjs                  LLM client — provider fallback chain

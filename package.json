@@ -12,7 +12,9 @@
     "install-hook": "bash sync/install.sh",
     "benchmark": "node autoresearch/benchmark.cjs --verbose",
     "benchmark:json": "node autoresearch/benchmark.cjs --verbose --json",
-    "hermes-config": "wsl -d Ubuntu -- bash /mnt/c/Za/claude-hermes-bridge/autoresearch/hermes-config.sh"
+    "hermes-config": "wsl -d Ubuntu -- bash /mnt/c/Za/claude-hermes-bridge/autoresearch/hermes-config.sh",
+    "launchers": "node launchers/generate-launchers.cjs --output launchers/out --shortcuts",
+    "launchers:bat-only": "node launchers/generate-launchers.cjs --output launchers/out"
   },
   "keywords": [
     "claude-code",
