@@ -8,6 +8,8 @@ Also includes a **production deployment guide** for getting Hermes running on Wi
 
 **Provider defaults:** Ollama (local, private, zero cost) is the primary provider. OpenRouter is the automatic fallback for when Ollama is unavailable or you need models with larger context windows (e.g. Gemini 2.5 Flash with 1M context). No external API key required for basic local use.
 
+📊 **[Project Roadmap](docs/roadmap.html)** — live score across sync, runtime, models, autoresearch, and launchers.
+
 ---
 
 ## What Gets Synced
