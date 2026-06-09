@@ -1,11 +1,3 @@
-{"tool":"Bash","ts":1779428286645,"command":"cd C:/Za/claude-hermes-bridge && git commit -m \"$(cat <<'EOF'\nfeat: multi-model launchers — OpenRouter + Ollama .bat generator\n\nAdd launchers/generate-launchers.cjs that generates 6 .bat files + deskt"}
-{"tool":"Bash","ts":1779428301735,"command":"cd C:/Za/claude-hermes-bridge && git push origin master 2>&1"}
-{"tool":"Bash","ts":1780519294987,"command":"cd C:/Za/claude-hermes-bridge && cat package.json && echo \"---\" && ls sync/ && echo \"---\" && ls autoresearch/measures/ 2>/dev/null && echo \"---\" && head -30 README.md"}
-{"tool":"Bash","ts":1780519320323,"command":"cd C:/Za/claude-hermes-bridge && cat sync/install.sh | head -30 && echo \"---\" && ls launchers/ 2>/dev/null && echo \"---\" && cat PRODUCTION_GUIDE.md | head -20 && echo \"---\" && wsl -d Ubuntu -- bash -c"}
-{"tool":"Bash","ts":1780519338192,"command":"cd C:/Za/claude-hermes-bridge && wsl -d Ubuntu -- bash -c \"ls ~/.hermes/skills/ 2>/dev/null\" && echo \"---\" && wsl -d Ubuntu -- bash -c \"ls ~/.hermes/skills/cc-agents/ 2>/dev/null | wc -l && ls ~/.herm"}
-{"tool":"Bash","ts":1780519358341,"command":"ls C:/Za/claude-hermes-bridge/.claude 2>/dev/null && echo \"has-claude-dir\" || echo \"no-claude-dir\" && wsl -d Ubuntu -- bash -c \"ls ~/.hermes/skills/frxncois-agents/ 2>/dev/null | wc -l && ls ~/.hermes"}
-{"tool":"Bash","ts":1780519378834,"command":"curl -s -o /dev/null -w \"%{http_code}\" --max-time 5 http://localhost:11434/api/tags 2>/dev/null | xargs echo \"ollama:\" && grep -q \"OPENROUTER_API_KEY\" C:/Za/claude-hermes-bridge/.env 2>/dev/null && ec"}
-{"tool":"Bash","ts":1780519384667,"command":"mkdir -p C:/Za/claude-hermes-bridge/docs && node -e \"console.log(new Date().toISOString())\""}
 {"tool":"Write","ts":1780519408337,"filePath":"C:\\Za\\claude-hermes-bridge\\roadmap.json"}
 {"tool":"Write","ts":1780519469273,"filePath":"C:\\Za\\claude-hermes-bridge\\docs\\roadmap.html"}
 {"tool":"Read","ts":1780519527468,"filePath":"C:\\Za\\claude-hermes-bridge\\README.md"}
@@ -28,3 +20,11 @@
 {"tool":"Bash","ts":1780974000077,"command":"powershell -c \"[Environment]::GetFolderPath('Desktop')\""}
 {"tool":"Bash","ts":1780974009328,"command":"cd \"C:/Za/claude-hermes-bridge\" && node launchers/generate-launchers.cjs --output \"C:/Users/J/Desktop/Hermes Launchers\""}
 {"tool":"Bash","ts":1780974021110,"command":"cd \"C:/Za/claude-hermes-bridge\" && npm run launchers:bat-only 2>&1"}
+{"tool":"Bash","ts":1780974030220,"command":"cd \"C:/Za/claude-hermes-bridge\" && git add -A && git commit -m \"feat: add DeepSeek V4 Flash/Pro 1M-context launchers + root hermes-deepseek.bat\""}
+{"tool":"Bash","ts":1780974039584,"command":"cd \"C:/Za/claude-hermes-bridge\" && git push 2>&1"}
+{"tool":"Bash","ts":1780974110832,"command":"ls \"C:/Users/J/Desktop/\" && echo \"---\" && ls \"C:/Users/J/Desktop/Hermes Launchers/\" 2>/dev/null || true"}
+{"tool":"Bash","ts":1780974120550,"command":"cat \"C:/Users/J/Desktop/hermes-chat.bat\" && echo \"===\" && cat \"C:/Users/J/Desktop/hermes-launcher.bat\""}
+{"tool":"Edit","ts":1780974144232,"filePath":"C:\\Za\\claude-hermes-bridge\\launchers\\generate-launchers.cjs"}
+{"tool":"Bash","ts":1780974154711,"command":"cd \"C:/Za/claude-hermes-bridge\" && node launchers/generate-launchers.cjs --output \"C:/Users/J/Desktop/Hermes Launchers\" && echo \"---desktop done---\" && npm run launchers:bat-only 2>&1 | tail -15"}
+{"tool":"Write","ts":1780974158935,"filePath":"C:\\Za\\claude-hermes-bridge\\hermes-deepseek.bat"}
+{"tool":"Bash","ts":1780974166472,"command":"cat \"C:/Users/J/Desktop/Hermes Launchers/hermes-deepseek.bat\""}

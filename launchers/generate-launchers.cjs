@@ -89,30 +89,13 @@ const LAUNCHERS = [
 ];
 
 function generateBat(launcher) {
-  const tag = launcher.file.replace(".bat", "").replace("hermes-", "hermes-");
+  const title = launcher.name;
   const lines = [
     "@echo off",
-    `REM ${launcher.file} — ${launcher.description}`,
-    `REM Provider: ${launcher.provider} | Model: ${launcher.model}`,
-    "",
-    "setlocal",
-    "",
-    `echo [${tag}] Launching Hermes (${launcher.model})...`,
-    "",
-    "where wt >nul 2>&1",
-    "if %ERRORLEVEL% == 0 (",
-    `    start "" wt.exe wsl -d Ubuntu -- bash -lc "export PATH=$HOME/.local/bin:$PATH && hermes chat --provider ${launcher.provider} --model ${launcher.model}"`,
-    ") else (",
-    `    start "" cmd /k "wsl -d Ubuntu -- bash -lc \\"export PATH=$HOME/.local/bin:$PATH && hermes chat --provider ${launcher.provider} --model ${launcher.model}\\""`,
-    ")",
-    "",
-    `echo [${tag}] Launched. Check your terminal window.`,
+    `title ${title}`,
+    `wsl -d Ubuntu -- bash -lc "hermes chat --provider ${launcher.provider} --model ${launcher.model}"`,
   ];
-  if (launcher.contextNote) lines.push(`echo [${tag}] ${launcher.contextNote}`);
-  if (launcher.dashboardNote) lines.push(`echo [${tag}] ${launcher.dashboardNote}`);
-  if (launcher.requiresNote) lines.push(`echo [${tag}] ${launcher.requiresNote}`);
-  lines.push("");
-  return lines.join("\r\n");
+  return lines.join("\r\n") + "\r\n";
 }
 
 function createShortcut(batPath, name, description) {
