@@ -138,10 +138,10 @@ echo "  ✓ sync-hermes.cjs"
 echo "  ✓ bulk-sync-hermes.cjs"
 echo ""
 
-# ── Step 4: Desktop shortcut ──────────────────────────────────────────────────
+# ── Step 4: Desktop shortcuts + Hermes Launchers folder ──────────────────────
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "STEP 4/6 — Desktop Shortcut"
+echo "STEP 4/6 — Desktop Shortcuts"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 DESKTOP_DIR=""
@@ -159,12 +159,27 @@ if [[ -z "$DESKTOP_DIR" ]] && [[ -n "$USERPROFILE" ]]; then
 fi
 
 if [[ -n "$DESKTOP_DIR" ]] && [[ -d "$DESKTOP_DIR" ]]; then
+  # hermes-chat.bat — quick default launcher
   cp "$REPO_ROOT/hermes-chat.bat" "$DESKTOP_DIR/hermes-chat.bat"
   echo "  ✓ hermes-chat.bat  →  Desktop"
-  echo "    Double-click to open Hermes chat in any terminal."
+
+  # "Hermes Launchers\" folder — all 8 model launchers
+  LAUNCHERS_DIR="$DESKTOP_DIR/Hermes Launchers"
+  mkdir -p "$LAUNCHERS_DIR"
+  if command -v node &>/dev/null; then
+    node "$REPO_ROOT/launchers/generate-launchers.cjs" --output "$LAUNCHERS_DIR" 2>/dev/null \
+      && echo "  ✓ Hermes Launchers/  →  Desktop (8 launchers)" \
+      || { echo "  ! Launcher generation failed — run manually:"; echo "    node launchers/generate-launchers.cjs --output \"$LAUNCHERS_DIR\""; }
+  else
+    echo "  ! Node.js not found — skipping launcher folder."
+    echo "    Install Node.js >= 18 and run:"
+    echo "    node launchers/generate-launchers.cjs --output \"Desktop/Hermes Launchers\""
+  fi
 else
   echo "  ! Could not detect Desktop path."
   echo "    Copy manually:  $REPO_ROOT/hermes-chat.bat  →  Desktop"
+  echo "    For all launchers, run:"
+  echo "    node launchers/generate-launchers.cjs --output \"C:/Users/YourName/Desktop/Hermes Launchers\""
 fi
 
 echo ""
@@ -210,5 +225,6 @@ echo "  node $HOOKS_DIR/bulk-sync-hermes.cjs"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  Install complete."
-echo "  Open Hermes chat:  double-click hermes-chat.bat on your Desktop"
+echo "  Quick start:      double-click  hermes-chat.bat  on your Desktop"
+echo "  All 8 launchers:  Desktop → Hermes Launchers\\"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
