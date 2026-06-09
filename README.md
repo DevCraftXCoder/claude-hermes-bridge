@@ -415,6 +415,7 @@ claude-hermes-bridge/
 ├── package.json                     pnpm project file
 ├── hermes-chat.bat                  Desktop shortcut — double-click to open Hermes chat (default model)
 ├── hermes-deepseek.bat              Shortcut — Hermes with DeepSeek V4 Flash (1M context)
+├── hermes-deepseek-pro.bat          Shortcut — Hermes with DeepSeek V4 Pro (1M context, 1.6T MoE)
 ├── sync/
 │   ├── sync-hermes.cjs              PostToolUse auto-sync hook
 │   ├── bulk-sync-hermes.cjs         One-time bulk sync script

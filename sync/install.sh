@@ -146,16 +146,22 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 DESKTOP_DIR=""
 
-# Try cmd.exe first (Git Bash on Windows)
-if command -v cmd.exe &>/dev/null; then
-  WIN_UP="$(cmd.exe /c "echo %USERPROFILE%" 2>/dev/null | tr -d '\r')"
-  # Convert C:\Users\J → /c/Users/J
-  DESKTOP_DIR="$(echo "$WIN_UP" | sed 's|\\|/|g; s|^\([A-Za-z]\):|/\L\1|')/Desktop"
-fi
-
-# Fallback: use $USERPROFILE env var if set (Git Bash sets it)
-if [[ -z "$DESKTOP_DIR" ]] && [[ -n "$USERPROFILE" ]]; then
-  DESKTOP_DIR="$(echo "$USERPROFILE" | sed 's|\\|/|g; s|^\([A-Za-z]\):|/\L\1|')/Desktop"
+# Resolve Windows Desktop path to a Git Bash-accessible Unix path.
+# Preference order:
+#   1. cygpath (Git for Windows built-in — cleanest, lowercase drive letter)
+#   2. $USERPROFILE env var (always set by Windows, inherited by Git Bash)
+# The cmd.exe /c echo approach is intentionally skipped — it emits the Windows
+# banner + CWD prompt instead of just the value, making reliable parsing impossible.
+# \L in sed replacement is a GNU extension that does NOT work in the sed bundled
+# with Git for Windows — it causes "unknown option to s" and produces an empty string.
+if command -v cygpath &>/dev/null && [[ -n "$USERPROFILE" ]]; then
+  DESKTOP_DIR="$(cygpath -u "$USERPROFILE")/Desktop"
+elif [[ -n "$USERPROFILE" ]]; then
+  # cygpath not available — convert C:\Users\X → /C/Users/X via sed.
+  # Use character class [\\] so the backslash is treated as a literal match, not
+  # an escape sequence. The /\1 replacement keeps the drive letter as-is (uppercase
+  # C is fine; Windows NTFS is case-insensitive, Git Bash accepts /C/ paths).
+  DESKTOP_DIR="$(echo "$USERPROFILE" | sed 's|[\\]|/|g; s|^\([A-Za-z]\):|/\1|')/Desktop"
 fi
 
 if [[ -n "$DESKTOP_DIR" ]] && [[ -d "$DESKTOP_DIR" ]]; then
