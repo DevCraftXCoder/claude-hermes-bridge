@@ -6,7 +6,7 @@ Every time you write or edit a Claude Code agent, hook, or skill file, a PostToo
 
 Also includes a **production deployment guide** for getting Hermes running on Windows + WSL2, and an **autoresearch integration** for LLM-powered hypothesis generation.
 
-**Provider defaults:** Ollama (local, private, zero cost) is the primary provider. OpenRouter is the automatic fallback for when Ollama is unavailable or you need models with larger context windows (e.g. Gemini 2.5 Flash with 1M context). No external API key required for basic local use.
+**Provider defaults:** Ollama (local, private, zero cost) is the primary provider. OpenRouter is the automatic fallback for when Ollama is unavailable or you need models with larger context windows. Supported 1M-context cloud options include Gemini 2.5 Flash, DeepSeek V4 Flash, and DeepSeek V4 Pro. No external API key required for basic local use.
 
 📊 **[Project Roadmap](docs/roadmap.html)** — live score across sync, runtime, models, autoresearch, and launchers.
 
@@ -47,7 +47,7 @@ The installer runs 6 steps automatically:
 1. Verifies WSL2 + Ubuntu are available
 2. Installs Hermes Agent inside WSL (skips if already installed)
 3. Copies sync hooks into your `.claude/hooks/` directory
-4. Drops **`hermes-chat.bat`** on your Windows Desktop — double-click to open Hermes chat
+4. Drops **`hermes-chat.bat`** on your Windows Desktop and creates a **`Hermes Launchers\`** folder with all 8 model launchers ready to double-click
 5. Prints the `settings.json` snippet to register the auto-sync hook
 6. Prints the bulk-sync command for your first sync
 
@@ -201,18 +201,20 @@ pnpm launchers        # .bat files + desktop shortcuts
 pnpm launchers:bat-only  # .bat files only (no shortcuts)
 ```
 
-This creates 6 launchers — 3 OpenRouter (cloud) + 3 Ollama (local):
+This creates 8 launchers — 5 OpenRouter (cloud) + 3 Ollama (local):
 
 | Shortcut | Provider | Model | Notes |
 |----------|----------|-------|-------|
 | Hermes Gemini | OpenRouter | `google/gemini-2.5-flash` | 1M context, fast |
 | Hermes Codex | OpenRouter | `openai/gpt-4o` | GPT-4o via OpenRouter |
 | Hermes Qwen | OpenRouter | `qwen/qwen3-30b-a3b` | Qwen3 30B MoE |
+| Hermes DeepSeek 1M | OpenRouter | `deepseek/deepseek-v4-flash` | 1M context, MoE 284B/13B active, cheapest 1M option |
+| Hermes DeepSeek Pro 1M | OpenRouter | `deepseek/deepseek-v4-pro` | 1M context, 1.6T/49B active MoE, premium tier |
 | Hermes Ollama Coder14B | Ollama local | `qwen2.5-coder:14b` | Best local coding model |
 | Hermes Ollama Coder7B | Ollama local | `qwen2.5-coder:7b` | Lighter coding model |
 | Hermes Ollama Llama3 | Ollama local | `llama3.2:latest` | General chat, 3B |
 
-Each launcher opens a Windows Terminal tab (or cmd fallback) running Hermes in WSL.
+Each launcher runs directly in your current terminal window via WSL.
 
 **Custom launchers:** Edit the `LAUNCHERS` array in `launchers/generate-launchers.cjs` to add your own models — any model available on OpenRouter or pulled in Ollama works.
 
@@ -411,7 +413,8 @@ claude-hermes-bridge/
 ├── README.md
 ├── PRODUCTION_GUIDE.md              Full Hermes + Windows/WSL2 deployment guide
 ├── package.json                     pnpm project file
-├── hermes-chat.bat                  Desktop shortcut — double-click to open Hermes chat
+├── hermes-chat.bat                  Desktop shortcut — double-click to open Hermes chat (default model)
+├── hermes-deepseek.bat              Shortcut — Hermes with DeepSeek V4 Flash (1M context)
 ├── sync/
 │   ├── sync-hermes.cjs              PostToolUse auto-sync hook
 │   ├── bulk-sync-hermes.cjs         One-time bulk sync script
