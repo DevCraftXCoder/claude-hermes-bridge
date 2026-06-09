@@ -41,6 +41,24 @@ const LAUNCHERS = [
     description: "Hermes CLI with Qwen3 30B via OpenRouter",
     dashboardNote: "Dashboard: http://localhost:4333",
   },
+  {
+    file: "hermes-deepseek.bat",
+    name: "Hermes DeepSeek 1M",
+    model: "deepseek/deepseek-v4-flash",
+    provider: "openrouter",
+    description: "Hermes CLI with DeepSeek V4 Flash (1M context) via OpenRouter",
+    dashboardNote: "Dashboard: http://localhost:4333",
+    contextNote: "Context: 1M tokens",
+  },
+  {
+    file: "hermes-deepseek-pro.bat",
+    name: "Hermes DeepSeek Pro 1M",
+    model: "deepseek/deepseek-v4-pro",
+    provider: "openrouter",
+    description: "Hermes CLI with DeepSeek V4 Pro (1M context, 1.6T MoE) via OpenRouter",
+    dashboardNote: "Dashboard: http://localhost:4333",
+    contextNote: "Context: 1M tokens",
+  },
 
   // Local Ollama models (require Ollama running on localhost:11434)
   // These use the ollama-local provider defined in ~/.hermes/config.yaml
@@ -90,6 +108,7 @@ function generateBat(launcher) {
     "",
     `echo [${tag}] Launched. Check your terminal window.`,
   ];
+  if (launcher.contextNote) lines.push(`echo [${tag}] ${launcher.contextNote}`);
   if (launcher.dashboardNote) lines.push(`echo [${tag}] ${launcher.dashboardNote}`);
   if (launcher.requiresNote) lines.push(`echo [${tag}] ${launcher.requiresNote}`);
   lines.push("");

@@ -1,30 +1,30 @@
-{"tool":"Bash","ts":1779227287752,"command":"cd C:/Za/claude-hermes-bridge && node -e \"\nconst fs = require('fs');\nconst lines = fs.readFileSync('.env','utf8').split('\\n');\nconst key = lines.find(l=>l.startsWith('OPENROUTER_API_KEY=')).split('=')"}
-{"tool":"Edit","ts":1779227300546,"filePath":"C:\\Za\\claude-hermes-bridge\\autoresearch\\lib\\llm.cjs"}
-{"tool":"Bash","ts":1779227358889,"command":"cd C:/Za/claude-hermes-bridge && node autoresearch/benchmark.cjs --verbose --json 2>&1"}
-{"tool":"Bash","ts":1779227371936,"command":"cd C:/Za/claude-hermes-bridge && git add autoresearch/lib/llm.cjs _runs/benchmark-latest.json && git commit -m \"$(cat <<'EOF'\nfix(openrouter): switch from :free to paid model — clears upstream 429 rat"}
-{"tool":"Bash","ts":1779227426985,"command":"cd C:/Za/claude-hermes-bridge && node -e \"const fs=require('fs'); const key=fs.readFileSync('.env','utf8').split('\\n').find(l=>l.startsWith('OPENROUTER_API_KEY=')).split('=').slice(1).join('=').trim()"}
-{"tool":"Write","ts":1779227452905,"filePath":"C:\\Za\\claude-hermes-bridge\\autoresearch\\fix-hermes-env.cjs"}
-{"tool":"Bash","ts":1779227460147,"command":"cd C:/Za/claude-hermes-bridge && node autoresearch/fix-hermes-env.cjs 2>&1"}
-{"tool":"Bash","ts":1779227467975,"command":"wsl -d Ubuntu -- bash -lc \"grep '^OPENROUTER_API_KEY=' ~/.hermes/.env | head -c 30\" 2>&1"}
-{"tool":"Bash","ts":1779227487134,"command":"wsl -d Ubuntu -- bash -lc \"timeout 30 hermes -z 'Say OK and nothing else' 2>&1\" 2>&1"}
-{"tool":"Bash","ts":1779227529312,"command":"cd C:/Za/claude-hermes-bridge && node autoresearch/benchmark.cjs --verbose --json 2>&1"}
-{"tool":"Bash","ts":1779227550950,"command":"cd C:/Za/claude-hermes-bridge && rm autoresearch/fix-hermes-env.cjs && git add autoresearch/lib/llm.cjs _runs/benchmark-latest.json && git commit -m \"$(cat <<'EOF'\nfix(hermes): set OpenRouter key in ~"}
-{"tool":"Read","ts":1779227602901,"filePath":"C:\\Za\\claude-hermes-bridge\\README.md"}
-{"tool":"Edit","ts":1779227821045,"filePath":"C:\\Za\\claude-hermes-bridge\\README.md"}
-{"tool":"Edit","ts":1779227831569,"filePath":"C:\\Za\\claude-hermes-bridge\\docs\\autoresearch-hermes-playbook.md"}
-{"tool":"Bash","ts":1779227841660,"command":"cd C:/Za/claude-hermes-bridge && git add README.md docs/autoresearch-hermes-playbook.md && git commit -m \"$(cat <<'EOF'\ndocs: update autoresearch section — benchmark results, correct model names\n\nAll "}
-{"tool":"Bash","ts":1779376655565,"command":"cd C:/Za/claude-hermes-bridge && git add README.md && git diff --cached --stat"}
-{"tool":"Bash","ts":1779376857797,"command":"cd C:/Za/claude-hermes-bridge && git commit -m \"docs: update README — remove Nous, default Ollama+OpenRouter, add provider resolution, troubleshooting, Discord gateway\""}
-{"tool":"Read","ts":1779376905048,"filePath":"C:\\Za\\DevCraftXCoder\\README.md"}
-{"tool":"Bash","ts":1779377024513,"command":"cd C:/Za/claude-hermes-bridge && git push"}
-{"tool":"Bash","ts":1779377037394,"command":"cd C:/Za/claude-hermes-bridge && cat package.json"}
-{"tool":"Glob","ts":1779377041763}
-{"tool":"Glob","ts":1779377041765}
-{"tool":"Read","ts":1779377046783,"filePath":"C:\\Za\\claude-hermes-bridge\\autoresearch\\hermes-config.sh"}
-{"tool":"Read","ts":1779377047095,"filePath":"C:\\Za\\claude-hermes-bridge\\autoresearch\\lib\\llm.cjs"}
-{"tool":"Edit","ts":1779377058558,"filePath":"C:\\Za\\claude-hermes-bridge\\autoresearch\\lib\\llm.cjs"}
-{"tool":"Write","ts":1779377074187,"filePath":"C:\\Za\\claude-hermes-bridge\\autoresearch\\hermes-config.sh"}
-{"tool":"Grep","ts":1779377079228}
-{"tool":"Read","ts":1779377084204,"filePath":"C:\\Za\\claude-hermes-bridge\\PRODUCTION_GUIDE.md"}
-{"tool":"Agent","ts":1779377375532}
-{"tool":"Grep","ts":1779377383671}
+{"tool":"Bash","ts":1779428286645,"command":"cd C:/Za/claude-hermes-bridge && git commit -m \"$(cat <<'EOF'\nfeat: multi-model launchers — OpenRouter + Ollama .bat generator\n\nAdd launchers/generate-launchers.cjs that generates 6 .bat files + deskt"}
+{"tool":"Bash","ts":1779428301735,"command":"cd C:/Za/claude-hermes-bridge && git push origin master 2>&1"}
+{"tool":"Bash","ts":1780519294987,"command":"cd C:/Za/claude-hermes-bridge && cat package.json && echo \"---\" && ls sync/ && echo \"---\" && ls autoresearch/measures/ 2>/dev/null && echo \"---\" && head -30 README.md"}
+{"tool":"Bash","ts":1780519320323,"command":"cd C:/Za/claude-hermes-bridge && cat sync/install.sh | head -30 && echo \"---\" && ls launchers/ 2>/dev/null && echo \"---\" && cat PRODUCTION_GUIDE.md | head -20 && echo \"---\" && wsl -d Ubuntu -- bash -c"}
+{"tool":"Bash","ts":1780519338192,"command":"cd C:/Za/claude-hermes-bridge && wsl -d Ubuntu -- bash -c \"ls ~/.hermes/skills/ 2>/dev/null\" && echo \"---\" && wsl -d Ubuntu -- bash -c \"ls ~/.hermes/skills/cc-agents/ 2>/dev/null | wc -l && ls ~/.herm"}
+{"tool":"Bash","ts":1780519358341,"command":"ls C:/Za/claude-hermes-bridge/.claude 2>/dev/null && echo \"has-claude-dir\" || echo \"no-claude-dir\" && wsl -d Ubuntu -- bash -c \"ls ~/.hermes/skills/frxncois-agents/ 2>/dev/null | wc -l && ls ~/.hermes"}
+{"tool":"Bash","ts":1780519378834,"command":"curl -s -o /dev/null -w \"%{http_code}\" --max-time 5 http://localhost:11434/api/tags 2>/dev/null | xargs echo \"ollama:\" && grep -q \"OPENROUTER_API_KEY\" C:/Za/claude-hermes-bridge/.env 2>/dev/null && ec"}
+{"tool":"Bash","ts":1780519384667,"command":"mkdir -p C:/Za/claude-hermes-bridge/docs && node -e \"console.log(new Date().toISOString())\""}
+{"tool":"Write","ts":1780519408337,"filePath":"C:\\Za\\claude-hermes-bridge\\roadmap.json"}
+{"tool":"Write","ts":1780519469273,"filePath":"C:\\Za\\claude-hermes-bridge\\docs\\roadmap.html"}
+{"tool":"Read","ts":1780519527468,"filePath":"C:\\Za\\claude-hermes-bridge\\README.md"}
+{"tool":"Read","ts":1780519531023,"filePath":"C:\\Za\\claude-hermes-bridge\\README.md"}
+{"tool":"Edit","ts":1780519535603,"filePath":"C:\\Za\\claude-hermes-bridge\\README.md"}
+{"tool":"Bash","ts":1780519572481,"command":"cp \"C:/Za/claude-hermes-bridge/docs/roadmap.html\" \"C:/Users/J/Documents/hermes-bridge-roadmap.html\" && echo \"done\""}
+{"tool":"Agent","ts":1780520072556}
+{"tool":"Bash","ts":1780581584897,"command":"cd \"C:/Za/claude-hermes-bridge\" && git add README.md\ngit commit -m \"docs: update README\"\ngit push"}
+{"tool":"Bash","ts":1780973659801,"command":"cd C:/Za 2>/dev/null\necho \"=== stale .forge-session.json ===\"; [ -f .forge-session.json ] && cat .forge-session.json || echo \"none\"\necho \"=== claude-hermes-bridge tree ===\"; ls -la C:/Za/claude-hermes"}
+{"tool":"Bash","ts":1780973708495,"command":"cd C:/Za/claude-hermes-bridge\necho \"=== sync/ ===\"; ls -la sync/ 2>&1\necho \"=== launchers/ ===\"; ls -la launchers/ 2>&1\necho \"=== docs/ ===\"; ls -la docs/ 2>&1\necho \"=== .bat files anywhere ===\"; find"}
+{"tool":"Read","ts":1780973726563,"filePath":"C:\\Za\\claude-hermes-bridge\\roadmap.json"}
+{"tool":"Read","ts":1780973727028,"filePath":"C:\\Za\\claude-hermes-bridge\\launchers\\generate-launchers.cjs"}
+{"tool":"Read","ts":1780973727174,"filePath":"C:\\Za\\claude-hermes-bridge\\hermes-chat.bat"}
+{"tool":"Read","ts":1780973738586,"filePath":"C:\\Za\\claude-hermes-bridge\\autoresearch\\hermes-config.sh"}
+{"tool":"Bash","ts":1780973746859,"command":"cd C:/Za/claude-hermes-bridge\necho \"=== autoresearch/lib/llm.cjs (head) ===\"; head -80 autoresearch/lib/llm.cjs 2>&1\necho \"=== grep deepseek across repo ===\"; grep -ri \"deepseek\" . --include=*.cjs --i"}
+{"tool":"Write","ts":1780973834947,"filePath":"C:\\Za\\docs\\superpowers\\specs\\2026-06-08-hermes-deepseek-1m-design.md"}
+{"tool":"Edit","ts":1780973845640,"filePath":"C:\\Za\\claude-hermes-bridge\\launchers\\generate-launchers.cjs"}
+{"tool":"Edit","ts":1780973852616,"filePath":"C:\\Za\\claude-hermes-bridge\\launchers\\generate-launchers.cjs"}
+{"tool":"Write","ts":1780973982739,"filePath":"C:\\Za\\claude-hermes-bridge\\hermes-deepseek.bat"}
+{"tool":"Bash","ts":1780974000077,"command":"powershell -c \"[Environment]::GetFolderPath('Desktop')\""}
+{"tool":"Bash","ts":1780974009328,"command":"cd \"C:/Za/claude-hermes-bridge\" && node launchers/generate-launchers.cjs --output \"C:/Users/J/Desktop/Hermes Launchers\""}
+{"tool":"Bash","ts":1780974021110,"command":"cd \"C:/Za/claude-hermes-bridge\" && npm run launchers:bat-only 2>&1"}

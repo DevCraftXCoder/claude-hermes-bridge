@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html data-theme="dark" lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0A0A0A;
+  --surface: #141414;
+  --surface2: #1C1C1C;
+  --ink: #F5F2EC;
+  --ink-muted: #9A968D;
+  --ink-dim: #5A5750;
+  --line: #2A2A2A;
+  --accent: #F5F2EC;
+  --pass: #4ADE80;
+  --fail: #F87171;
+  --warn: #FACC15;
+  --bar-bg: #2A2A2A;
+  --radius: 6px;
+  --font: 'Geist', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --sidebar-w: 220px;
+}
+[data-theme="light"] {
+  --bg: #F5F2EC;
+  --surface: #EBEBDF;
+  --surface2: #E0DDCF;
+  --ink: #0A0A0A;
+  --ink-muted: #5A5750;
+  --ink-dim: #9A968D;
+  --line: #CCCBC4;
+  --bar-bg: #D5D3CC;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--ink);
+  display: flex;
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.sidebar {
+  width: var(--sidebar-w);
+  min-height: 100vh;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  padding: 24px 0;
+  position: sticky;
+  top: 0;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+.sidebar-brand {
+  padding: 0 20px 20px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 16px;
+}
+.sidebar-brand .project-name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-brand .version {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-dim);
+  margin-top: 2px;
+}
+.overall-score-widget {
+  padding: 12px 20px 20px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 16px;
+}
+.overall-score-widget .label {
+  font-size: 11px;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+.score-ring-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.score-number {
+  font-family: var(--mono);
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1;
+}
+.score-bar-thin {
+  flex: 1;
+  height: 4px;
+  background: var(--bar-bg);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.score-bar-fill {
+  height: 100%;
+  background: var(--ink);
+  border-radius: 2px;
+  width: 0;
+  transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sidebar-nav { padding: 0 12px; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--ink-muted);
+  font-size: 13px;
+  transition: all 0.15s;
+  gap: 8px;
+}
+.nav-item:hover, .nav-item.active {
+  background: var(--surface2);
+  color: var(--ink);
+}
+.nav-item .nav-score {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-dim);
+  flex-shrink: 0;
+}
+.nav-item.active .nav-score { color: var(--ink-muted); }
+.sidebar-footer {
+  padding: 16px 20px 0;
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+}
+.sync-time {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-dim);
+  line-height: 1.4;
+}
+.theme-btn {
+  margin-top: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--line);
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-family: var(--font);
+  padding: 5px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+}
+.theme-btn:hover { color: var(--ink); background: var(--surface); }
+.main {
+  flex: 1;
+  padding: 40px 48px;
+  max-width: 820px;
+}
+.page-header { margin-bottom: 48px; }
+.page-header h1 {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 6px;
+}
+.page-header .subtitle {
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+.section {
+  margin-bottom: 48px;
+  scroll-margin-top: 32px;
+}
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.section-title {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.section-score-label {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+.section-bar {
+  height: 3px;
+  background: var(--bar-bg);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.section-bar-fill {
+  height: 100%;
+  background: var(--ink);
+  border-radius: 2px;
+  width: 0;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.items-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.item-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  transition: border-color 0.15s;
+}
+.item-row:hover { border-color: var(--ink-dim); }
+.item-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+}
+.item-icon.pass { background: var(--pass); color: #000; }
+.item-icon.fail { background: var(--fail); color: #000; }
+.item-title { flex: 1; font-size: 13px; color: var(--ink); }
+.item-title.fail { color: var(--ink-muted); }
+.item-meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-dim);
+  flex-shrink: 0;
+}
+@media (max-width: 768px) {
+  body { flex-direction: column; }
+  .sidebar { width: 100%; min-height: auto; position: static; }
+  .main { padding: 24px 20px; }
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="project-name" id="sb-project">—</div>
+    <div class="version" id="sb-version">—</div>
+  </div>
+  <div class="overall-score-widget">
+    <div class="label">Overall Score</div>
+    <div class="score-ring-container">
+      <div class="score-number" id="sb-score">0%</div>
+      <div class="score-bar-thin">
+        <div class="score-bar-fill" id="sb-bar"></div>
+      </div>
+    </div>
+  </div>
+  <nav class="sidebar-nav" id="sidebar-nav"></nav>
+  <div class="sidebar-footer">
+    <div class="sync-time">Last scanned<br><span id="sync-time-val">—</span></div>
+    <button class="theme-btn" onclick="toggleTheme()">Toggle theme</button>
+  </div>
+</aside>
+
+<main class="main" id="main">
+  <div class="page-header">
+    <h1 id="hdr-title">Project Roadmap</h1>
+    <div class="subtitle" id="hdr-sub">Loading...</div>
+  </div>
+  <div id="sections-container"></div>
+</main>
+
+<script>
+/* __ROADMAP_DATA_START__ */
+window.ROADMAP_DATA = {"project":"Claude Hermes Bridge","version":"1.0.0","scannedAt":"2026-06-03T20:43:04.003Z","overallScore":76,"sections":[{"id":"sync","title":"Core Sync","weight":1.5,"score":100,"items":[{"id":"sync-hook-registered","title":"sync-hermes.cjs registered in settings.json","passed":true,"checkType":"grep","weight":2.0},{"id":"bulk-sync","title":"bulk-sync-hermes.cjs present","passed":true,"checkType":"file","weight":1.0},{"id":"installer","title":"install.sh present","passed":true,"checkType":"file","weight":1.0},{"id":"sync-hook-src","title":"sync-hermes.cjs source present","passed":true,"checkType":"file","weight":1.0}]},{"id":"hermes-runtime","title":"Hermes Runtime (WSL2)","weight":1.5,"score":86,"items":[{"id":"hermes-dir","title":"~/.hermes/ directory exists in WSL2","passed":true,"checkType":"command","weight":2.0},{"id":"hermes-config","title":"~/.hermes/config.yaml present","passed":true,"checkType":"command","weight":1.5},{"id":"hermes-agents-synced","title":"frxncois-agents synced (68 skills)","passed":true,"checkType":"command","weight":1.5},{"id":"hermes-hooks-synced","title":"frxncois-hooks synced (50 skills)","passed":true,"checkType":"command","weight":1.5},{"id":"hermes-skills-synced","title":"frxncois-skills synced (57 skills)","passed":true,"checkType":"command","weight":1.5},{"id":"hermes-dashboard","title":"Hermes dashboard (:4333) healthy","passed":false,"checkType":"http","weight":1.0}]},{"id":"models","title":"Model Connectivity","weight":1.2,"score":100,"items":[{"id":"ollama-running","title":"Ollama running (:11434)","passed":true,"checkType":"http","weight":2.0},{"id":"openrouter-key","title":"OPENROUTER_API_KEY in .env","passed":true,"checkType":"grep","weight":1.5},{"id":"benchmark-run","title":"Benchmark results present","passed":true,"checkType":"file","weight":1.0}]},{"id":"autoresearch","title":"Autoresearch Integration","weight":1.0,"score":67,"items":[{"id":"benchmark-cjs","title":"benchmark.cjs script present","passed":true,"checkType":"file","weight":1.0},{"id":"hermes-config-sh","title":"hermes-config.sh present","passed":true,"checkType":"file","weight":1.0},{"id":"llm-lib","title":"autoresearch/lib/llm.cjs present","passed":true,"checkType":"file","weight":1.0},{"id":"measures-written","title":"Autoresearch measures written (1+)","passed":false,"checkType":"command","weight":2.0},{"id":"autoresearch-playbook","title":"Autoresearch playbook doc","passed":true,"checkType":"file","weight":0.5}]},{"id":"launchers","title":"Launchers","weight":0.8,"score":57,"items":[{"id":"generate-launchers","title":"generate-launchers.cjs present","passed":true,"checkType":"file","weight":1.0},{"id":"hermes-chat-bat","title":"hermes-chat.bat at repo root","passed":true,"checkType":"file","weight":1.5},{"id":"launcher-out-generated","title":"Launcher output generated","passed":false,"checkType":"command","weight":1.0}]},{"id":"docs","title":"Documentation","weight":0.8,"score":100,"items":[{"id":"readme","title":"README.md present","passed":true,"checkType":"file","weight":1.0},{"id":"production-guide","title":"PRODUCTION_GUIDE.md present","passed":true,"checkType":"file","weight":1.5},{"id":"gitignore","title":".gitignore present","passed":true,"checkType":"file","weight":0.5}]}]};
+/* __ROADMAP_DATA_END__ */
+
+function toggleTheme() {
+  const html = document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  localStorage.setItem('roadmap-theme', html.getAttribute('data-theme'));
+}
+(function() {
+  const saved = localStorage.getItem('roadmap-theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+})();
+function formatDate(iso) {
+  if (!iso) return '—';
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  } catch { return iso; }
+}
+function renderRoadmap(data) {
+  if (!data) return;
+  document.title = data.project + ' — Roadmap';
+  document.getElementById('hdr-title').textContent = data.project + ' — Roadmap';
+  document.getElementById('hdr-sub').textContent = 'v' + (data.version || '1.0.0') + ' · ' + (data.sections || []).length + ' sections · ' + ((data.sections || []).reduce((a, s) => a + s.items.length, 0)) + ' checks';
+  document.getElementById('sb-project').textContent = data.project;
+  document.getElementById('sb-version').textContent = 'v' + (data.version || '1.0.0');
+  document.getElementById('sync-time-val').textContent = formatDate(data.scannedAt);
+  const score = data.overallScore || 0;
+  document.getElementById('sb-score').textContent = score + '%';
+  requestAnimationFrame(() => { requestAnimationFrame(() => { document.getElementById('sb-bar').style.width = score + '%'; }); });
+  const nav = document.getElementById('sidebar-nav');
+  const container = document.getElementById('sections-container');
+  nav.innerHTML = ''; container.innerHTML = '';
+  (data.sections || []).forEach(section => {
+    const navA = document.createElement('a');
+    navA.className = 'nav-item';
+    navA.href = '#section-' + section.id;
+    navA.innerHTML = '<span>' + escHtml(section.title) + '</span><span class="nav-score">' + section.score + '%</span>';
+    nav.appendChild(navA);
+    const sec = document.createElement('div');
+    sec.className = 'section'; sec.id = 'section-' + section.id;
+    const passedCount = (section.items || []).filter(i => i.passed).length;
+    sec.innerHTML = `<div class="section-header"><span class="section-title">${escHtml(section.title)}</span><span class="section-score-label">${section.score}% &nbsp;·&nbsp; ${passedCount}/${section.items.length}</span></div><div class="section-bar"><div class="section-bar-fill" data-score="${section.score}"></div></div><div class="items-grid">${(section.items || []).map(renderItem).join('')}</div>`;
+    container.appendChild(sec);
+  });
+  requestAnimationFrame(() => { requestAnimationFrame(() => { document.querySelectorAll('.section-bar-fill').forEach(el => { el.style.width = el.dataset.score + '%'; }); }); });
+  const navItems = nav.querySelectorAll('.nav-item');
+  const sections = container.querySelectorAll('.section');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navItems.forEach(n => n.classList.remove('active'));
+        const match = nav.querySelector('[href="#' + e.target.id + '"]');
+        if (match) match.classList.add('active');
+      }
+    });
+  }, { threshold: 0.3 });
+  sections.forEach(s => obs.observe(s));
+}
+function renderItem(item) {
+  const icon = item.passed ? '<div class="item-icon pass">✓</div>' : '<div class="item-icon fail">✗</div>';
+  return `<div class="item-row">${icon}<span class="item-title ${item.passed ? '' : 'fail'}">${escHtml(item.title)}</span><span class="item-meta">${escHtml(item.checkType || '')}</span></div>`;
+}
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+renderRoadmap(window.ROADMAP_DATA);
+</script>
+</body>
+</html>
