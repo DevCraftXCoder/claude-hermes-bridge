@@ -21,9 +21,9 @@
       "items": [
         { "id": "hermes-dir", "title": "~/.hermes/ directory exists in WSL2", "weight": 2.0, "check": { "type": "command", "cmd": "wsl -d Ubuntu -- bash -c 'test -d ~/.hermes'", "expect": 0 } },
         { "id": "hermes-config", "title": "~/.hermes/config.yaml present", "weight": 1.5, "check": { "type": "command", "cmd": "wsl -d Ubuntu -- bash -c 'test -f ~/.hermes/config.yaml'", "expect": 0 } },
-        { "id": "hermes-agents-synced", "title": "frxncois-agents synced (1+ skills)", "weight": 1.5, "check": { "type": "command", "cmd": "wsl -d Ubuntu -- bash -c 'ls ~/.hermes/skills/frxncois-agents/ 2>/dev/null | wc -l | awk \"{exit (\\$1 >= 1) ? 0 : 1}\"'", "expect": 0 } },
-        { "id": "hermes-hooks-synced", "title": "frxncois-hooks synced (1+ skills)", "weight": 1.5, "check": { "type": "command", "cmd": "wsl -d Ubuntu -- bash -c 'ls ~/.hermes/skills/frxncois-hooks/ 2>/dev/null | wc -l | awk \"{exit (\\$1 >= 1) ? 0 : 1}\"'", "expect": 0 } },
-        { "id": "hermes-skills-synced", "title": "frxncois-skills synced (1+ skills)", "weight": 1.5, "check": { "type": "command", "cmd": "wsl -d Ubuntu -- bash -c 'ls ~/.hermes/skills/frxncois-skills/ 2>/dev/null | wc -l | awk \"{exit (\\$1 >= 1) ? 0 : 1}\"'", "expect": 0 } },
+        { "id": "hermes-agents-synced", "title": "frxncois-agents synced (1+ skills)", "weight": 1.5, "check": { "type": "command", "cmd": "wsl -d Ubuntu -- bash -c 'test $(ls ~/.hermes/skills/frxncois-agents/ 2>/dev/null | wc -l) -ge 1'", "expect": 0 } },
+        { "id": "hermes-hooks-synced", "title": "frxncois-hooks synced (1+ skills)", "weight": 1.5, "check": { "type": "command", "cmd": "wsl -d Ubuntu -- bash -c 'test $(ls ~/.hermes/skills/frxncois-hooks/ 2>/dev/null | wc -l) -ge 1'", "expect": 0 } },
+        { "id": "hermes-skills-synced", "title": "frxncois-skills synced (1+ skills)", "weight": 1.5, "check": { "type": "command", "cmd": "wsl -d Ubuntu -- bash -c 'test $(ls ~/.hermes/skills/frxncois-skills/ 2>/dev/null | wc -l) -ge 1'", "expect": 0 } },
         { "id": "hermes-dashboard", "title": "Hermes dashboard (:4333) healthy", "weight": 1.0, "check": { "type": "http", "url": "http://localhost:4333/health", "expect": 200 } }
       ]
     },
@@ -45,7 +45,7 @@
         { "id": "benchmark-cjs", "title": "benchmark.cjs script present", "weight": 1.0, "check": { "type": "file", "path": "autoresearch/benchmark.cjs" } },
         { "id": "hermes-config-sh", "title": "hermes-config.sh present", "weight": 1.0, "check": { "type": "file", "path": "autoresearch/hermes-config.sh" } },
         { "id": "llm-lib", "title": "autoresearch/lib/llm.cjs present", "weight": 1.0, "check": { "type": "file", "path": "autoresearch/lib/llm.cjs" } },
-        { "id": "measures-written", "title": "Autoresearch measures written (1+)", "weight": 2.0, "check": { "type": "command", "cmd": "ls C:/Za/claude-hermes-bridge/autoresearch/measures/*.cjs 2>/dev/null | grep -v planner-template | wc -l | awk '{exit ($1 >= 1) ? 0 : 1}'", "expect": 0 } },
+        { "id": "measures-written", "title": "Autoresearch measures written (1+)", "weight": 2.0, "check": { "type": "command", "cmd": "node -e \"const fs=require('fs');try{const f=fs.readdirSync('C:/Za/claude-hermes-bridge/autoresearch/measures').filter(x=>x.endsWith('.cjs')&&!x.includes('planner-template'));process.exit(f.length>=1?0:1)}catch(e){process.exit(1)}\"", "expect": 0 } },
         { "id": "autoresearch-playbook", "title": "Autoresearch playbook doc", "weight": 0.5, "check": { "type": "file", "path": "docs/autoresearch-hermes-playbook.md" } }
       ]
     },
@@ -56,7 +56,7 @@
       "items": [
         { "id": "generate-launchers", "title": "generate-launchers.cjs present", "weight": 1.0, "check": { "type": "file", "path": "launchers/generate-launchers.cjs" } },
         { "id": "hermes-chat-bat", "title": "hermes-chat.bat at repo root", "weight": 1.5, "check": { "type": "file", "path": "hermes-chat.bat" } },
-        { "id": "launcher-out-generated", "title": "Launcher output generated", "weight": 1.0, "check": { "type": "command", "cmd": "ls C:/Za/claude-hermes-bridge/launchers/out/*.bat 2>/dev/null | wc -l | awk '{exit ($1 >= 1) ? 0 : 1}'", "expect": 0 } }
+        { "id": "launcher-out-generated", "title": "Launcher output generated", "weight": 1.0, "check": { "type": "command", "cmd": "node -e \"const fs=require('fs');try{const f=fs.readdirSync('C:/Za/claude-hermes-bridge/launchers/out').filter(x=>x.endsWith('.bat'));process.exit(f.length>=1?0:1)}catch(e){process.exit(1)}\"", "expect": 0 } }
       ]
     },
     {
